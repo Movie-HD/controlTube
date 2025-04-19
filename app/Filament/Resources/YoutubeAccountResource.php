@@ -19,6 +19,7 @@ use Filament\Forms\Components\Toggle; # Agregar si es un Toggle [Form]
 use Filament\Tables\Columns\TextColumn; # Agregar si es un Column [Table]
 use Filament\Tables\Columns\ToggleColumn; # Agregar si es un Toggle [Table]
 use Filament\Forms\Components\Section;
+use Filament\Tables\Columns\IconColumn;
 
 class YoutubeAccountResource extends Resource
 {
@@ -50,7 +51,15 @@ class YoutubeAccountResource extends Resource
                         #->revealable()
                         ->label('Contraseña'),
 
-                    TextInput::make('phone_number'),
+                    Select::make('phone_number_id')
+                        ->label('Número de Teléfono')
+                        ->relationship(
+                            name: 'phoneNumber',
+                            titleAttribute: 'phone_number',
+                            modifyQueryUsing: fn (Builder $query) => $query->where('in_use', false)
+                        )
+                        ->searchable()
+                        ->preload(),
 
                     DatePicker::make('birth_date'),
 
@@ -112,8 +121,12 @@ class YoutubeAccountResource extends Resource
                 TextColumn::make('channel_url'),
                 TextColumn::make('proxy.proxy'),
                 TextColumn::make('keywords.keyword'),
-                ToggleColumn::make('captcha_required'),
-                ToggleColumn::make('verification_pending'),
+                IconColumn::make('captcha_required')
+                    ->label('¿Verif. Bot?')
+                    ->boolean(),
+                IconColumn::make('verification_pending')
+                    ->label('¿Verif. 15min?')
+                    ->boolean(),
             ])
             ->filters([
                 //

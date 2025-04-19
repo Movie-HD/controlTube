@@ -44,4 +44,9 @@ class YoutubeAccount extends Model
     {
         return $this->belongsTo(Resolution::class);
     }
+
+    public function phoneNumber()
+    {
+        return $this->belongsTo(PhoneNumber::class);
+    }
 }

@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Models\YoutubeAccount;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ToggleColumn;
 
 class YoutubeProxyResource extends Resource
@@ -50,7 +51,9 @@ class YoutubeProxyResource extends Resource
                     ->label('Proxy')
                     ->sortable()
                     ->searchable(),
-                ToggleColumn::make('in_use'),
+                IconColumn::make('in_use')
+                    ->label('¿En Uso?')
+                    ->boolean(),
             ])
             ->filters([
                 //

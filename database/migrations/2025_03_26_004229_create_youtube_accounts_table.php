@@ -16,12 +16,13 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique()->nullable();
             $table->string('password')->nullable();
-            $table->string('phone_number')->nullable();
             $table->enum('gender', ['male', 'female', 'other'])->nullable();
             $table->date('birth_date')->nullable();
             $table->foreignId('proxy_id')->nullable()->constrained('youtube_proxies')->nullOnDelete();
             $table->string('channel_url')->nullable();
 
+            # Relación con phone_number
+            $table->foreignId('phone_number_id')->nullable()->constrained('phone_numbers')->nullOnDelete();
             # Relación con el estado
             $table->foreignId('status_id')->default(1)->constrained('account_statuses')->cascadeOnDelete();
             # Relación con la resolucion

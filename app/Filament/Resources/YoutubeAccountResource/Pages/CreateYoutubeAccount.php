@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\YoutubeAccountResource\Pages;
 
 use App\Filament\Resources\YoutubeAccountResource;
+use App\Models\PhoneNumber;
 use App\Models\YoutubeAccount;
 use App\Models\YoutubeProxy;
 use Filament\Actions;
@@ -20,6 +21,14 @@ class CreateYoutubeAccount extends CreateRecord
 
         if ($record->proxy_id) {
             $record->proxy->update([
+                'in_use' => true,
+                'used_by_account_id' => $record->id,
+            ]);
+        }
+
+        # PhoneNumber
+        if ($data['phone_number_id']) {
+            PhoneNumber::where('id', $data['phone_number_id'])->update([
                 'in_use' => true,
                 'used_by_account_id' => $record->id,
             ]);
