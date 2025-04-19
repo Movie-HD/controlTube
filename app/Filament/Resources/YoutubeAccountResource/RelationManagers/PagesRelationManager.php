@@ -29,14 +29,10 @@ class PagesRelationManager extends RelationManager
                     ->required(),
 
                 TextInput::make('email')
-                    ->label('Correo Usado')
-                    ->email()
-                    ->required(),
+                    ->label('Correo Usado'),
 
                 TextInput::make('password')
-                    ->label('Contraseña')
-                    ->password()
-                    ->required(),
+                    ->label('Contraseña'),
             ]);
     }
 

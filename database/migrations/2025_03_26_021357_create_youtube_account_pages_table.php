@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('youtube_account_id')->constrained()->cascadeOnDelete(); // Relación con la cuenta de YouTube
             $table->foreignId('youtube_page_id')->constrained()->cascadeOnDelete(); // Relación con la página externa (Facebook, etc.)
-            $table->string('email'); // Email usado para el registro en la página
-            $table->string('password'); // Contraseña (en un sistema real, considerar encriptación)
+            $table->string('email')->nullable(); // Email usado para el registro en la página
+            $table->string('password')->nullable(); // Contraseña (en un sistema real, considerar encriptación)
             $table->timestamps();
         });
     }

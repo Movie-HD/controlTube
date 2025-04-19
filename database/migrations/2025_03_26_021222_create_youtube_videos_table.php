@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('account_id')->constrained('youtube_accounts')->cascadeOnDelete();
             $table->string('video_url');
-            $table->enum('status', ['uploaded', 'deleted']);
+            $table->enum('status', ['foruploaded', 'uploaded', 'deleted']);
             $table->timestamps();
         });
     }

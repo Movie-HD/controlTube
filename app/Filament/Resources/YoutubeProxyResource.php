@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Models\YoutubeAccount;
+use Filament\Tables\Columns\ToggleColumn;
 
 class YoutubeProxyResource extends Resource
 {
@@ -33,7 +34,7 @@ class YoutubeProxyResource extends Resource
                     ->label('En Uso'),
                 Forms\Components\Select::make('used_by_account_id')
                     ->label('Cuenta de YouTube')
-                    ->relationship('usedByAccount', 'email') // Usa relación en vez de pluck()
+                    ->relationship('usedByAccount', 'name') // Usa relación en vez de pluck()
                     ->searchable()
                     ->preload()
                     ->nullable(),
@@ -49,6 +50,7 @@ class YoutubeProxyResource extends Resource
                     ->label('Proxy')
                     ->sortable()
                     ->searchable(),
+                ToggleColumn::make('in_use'),
             ])
             ->filters([
                 //

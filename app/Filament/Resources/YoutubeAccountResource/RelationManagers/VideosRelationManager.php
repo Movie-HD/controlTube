@@ -23,10 +23,11 @@ class VideosRelationManager extends RelationManager
                     ->maxLength(255),
                 Forms\Components\Select::make('status')
                     ->options([
+                        'foruploaded' => 'Por Subir',
                         'uploaded' => 'Subido',
                         'deleted' => 'Eliminado',
                     ])
-                    ->default('uploaded')
+                    ->default('foruploaded')
                     ->required(),
             ]);
     }

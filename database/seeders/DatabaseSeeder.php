@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
 
         # Seed para estados de cuenta
         $accountStatuses = [
+            'Nuevo',
             'Activo',
             'Suspendido',
             'Inactivo',
@@ -50,10 +51,10 @@ class DatabaseSeeder extends Seeder
 
         # Seed para páginas de YouTube
         $youtubePages = [
-            ['name' => 'YouTube Home', 'url' => 'https://www.youtube.com'],
-            ['name' => 'YouTube Studio', 'url' => 'https://studio.youtube.com'],
-            ['name' => 'YouTube Music', 'url' => 'https://music.youtube.com'],
-            ['name' => 'YouTube Kids', 'url' => 'https://www.youtubekids.com'],
+            ['name' => 'YouTube', 'url' => 'https://www.youtube.com'],
+            ['name' => 'Gmail', 'url' => 'https://studio.youtube.com'],
+            ['name' => 'Facebook', 'url' => 'https://music.youtube.com'],
+            ['name' => 'Tiktok', 'url' => 'https://www.youtubekids.com'],
         ];
 
         foreach ($youtubePages as $page) {

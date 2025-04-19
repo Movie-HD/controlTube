@@ -52,8 +52,15 @@ class YoutubeAccountResource extends Resource
 
                     TextInput::make('phone_number'),
 
-                    DatePicker::make('birth_date')
-                        ->required(),
+                    DatePicker::make('birth_date'),
+
+                    Select::make('gender')
+                        ->label('Género')
+                        ->options([
+                            'male' => 'Masculino',
+                            'female' => 'Femenino',
+                            'other' => 'Otro',
+                        ]),
                 ]),
 
                 Section::make('Datos de estado')
@@ -63,14 +70,14 @@ class YoutubeAccountResource extends Resource
                 ])
                 ->schema([
                     Select::make('status')
-                        ->required()
                         ->label('status')
                         ->relationship('status', 'name') # Asi obtenemos la rela el nombre de la empresa.
                         ->searchable()
-                        ->preload(), # Agregamos eso para que cargue los datos del select.
+                        ->preload()
+                        ->required(), # Agregamos eso para que cargue los datos del select.
 
                     Select::make('proxy')
-                        ->label('proxy')
+                        ->label('Proxy')
                         ->relationship(
                             name: 'proxy',
                             titleAttribute: 'proxy',
