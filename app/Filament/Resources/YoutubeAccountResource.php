@@ -20,6 +20,7 @@ use Filament\Tables\Columns\TextColumn; # Agregar si es un Column [Table]
 use Filament\Tables\Columns\ToggleColumn; # Agregar si es un Toggle [Table]
 use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Forms\Components\ToggleButtons;
 
 class YoutubeAccountResource extends Resource
 {
@@ -59,7 +60,41 @@ class YoutubeAccountResource extends Resource
                             modifyQueryUsing: fn (Builder $query) => $query->where('in_use', false)
                         )
                         ->searchable()
-                        ->preload(),
+                        ->preload()
+                        ->createOptionForm([
+                            TextInput::make('phone_number')->required(),
+                            Toggle::make('is_physical_chip')
+                                ->label('¿Chip físico?')
+                                ->reactive(),
+
+                            TextInput::make('name')
+                                ->label('Nombre')
+                                ->visible(fn ($get) => $get('is_physical_chip')),
+
+                            TextInput::make('dni')
+                                ->label('DNI')
+                                ->visible(fn ($get) => $get('is_physical_chip')),
+
+                            TextInput::make('iccid_code')
+                                ->label('Código ICCID')
+                                ->visible(fn ($get) => $get('is_physical_chip'))
+                                ->suffixAction(
+                                    Forms\Components\Actions\Action::make('scan_qr')
+                                        ->icon('heroicon-o-qr-code')
+                                        ->label('Escanear')
+                                        ->modalHeading('Escanear código QR')
+                                        ->modalDescription('Coloca el código QR frente a la cámara para escanearlo')
+                                        ->modalContent(view ('filament.components.qr-scanner'))
+                                        ->modalSubmitActionLabel('Cerrar')
+                                        ->modalWidth('md')
+                                ),
+
+                            DatePicker::make('registered_at')
+                                ->label('Fecha de Registro'),
+
+                            Toggle::make('in_use')
+                                ->label('En Uso'),
+                        ]),
 
                     DatePicker::make('birth_date'),
 
@@ -105,8 +140,14 @@ class YoutubeAccountResource extends Resource
                         ->url()
                         ->nullable(),
 
-                    Toggle::make('captcha_required'),
-                    Toggle::make('verification_pending'),
+                    ToggleButtons::make('captcha_required')
+                        ->label('¿Pidio Verificacion para crear la Cuenta?')
+                        ->inline()
+                        ->boolean(),
+                    ToggleButtons::make('verification_pending')
+                        ->label('¿Verificación 15min?')
+                        ->inline()
+                        ->boolean(),
                 ])
             ]);
     }
@@ -114,6 +155,7 @@ class YoutubeAccountResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc') # Ordenar por fecha de creación
             ->columns([
                 TextColumn::make('name')->sortable()->searchable(),
                 TextColumn::make('email')->sortable()->searchable(),

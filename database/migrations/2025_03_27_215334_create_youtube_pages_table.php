@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique(); // Nombre único de la página (Facebook, Twitter, etc.)
             $table->string('url');
+            $table->mediumText('descripcion')->nullable();
             $table->timestamps();
         });
     }

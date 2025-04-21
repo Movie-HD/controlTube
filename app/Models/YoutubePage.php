@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class YoutubePage extends Model {
 
-    protected $fillable = ['name', 'url'];
+    protected $fillable = ['name', 'url', 'descripcion'];
 
     public function accounts() {
         return $this->hasMany(YoutubeAccountPage::class, 'youtube_page_id');

@@ -14,6 +14,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\RichEditor;
 
 class YoutubePageResource extends Resource
 {
@@ -34,6 +35,24 @@ class YoutubePageResource extends Resource
                     ->label('URL de la Página')
                     ->url()
                     ->required(),
+                RichEditor::make('descripcion')
+                    ->label('Descripción')
+                    ->nullable()
+                    ->toolbarButtons([
+                        'attachFiles',
+                        'blockquote',
+                        'bold',
+                        'bulletList',
+                        'codeBlock',
+                        'h2',
+                        'h3',
+                        'italic',
+                        'link',
+                        'orderedList',
+                        'redo',
+                        'strike',
+                        'undo',
+                    ]),
             ]);
     }
 

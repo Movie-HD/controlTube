@@ -44,7 +44,17 @@ class PhoneNumberResource extends Resource
 
                 TextInput::make('iccid_code')
                     ->label('Código ICCID')
-                    ->visible(fn ($get) => $get('is_physical_chip')),
+                    ->visible(fn ($get) => $get('is_physical_chip'))
+                    ->suffixAction(
+                        Forms\Components\Actions\Action::make('scan_qr')
+                            ->icon('heroicon-o-qr-code')
+                            ->label('Escanear')
+                            ->modalHeading('Escanear código QR')
+                            ->modalDescription('Coloca el código QR frente a la cámara para escanearlo')
+                            ->modalContent(view ('filament.components.qr-scanner'))
+                            ->modalSubmitActionLabel('Cerrar')
+                            ->modalWidth('md')
+                    ),
 
                 DatePicker::make('registered_at')
                     ->label('Fecha de Registro'),
@@ -60,6 +70,13 @@ class PhoneNumberResource extends Resource
         ->columns([
             TextColumn::make('phone_number')
                 ->label('Número de Teléfono')
+                ->searchable()
+                ->sortable(),
+
+            TextColumn::make('usedByAccount.name') # TextColumn::make('NombreDelMetodo.NombreDelCampo')
+                ->color('success')
+                ->icon('heroicon-o-check')
+                ->label('Usado por:')
                 ->searchable()
                 ->sortable(),
 

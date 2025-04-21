@@ -28,8 +28,8 @@ return new class extends Migration
             # Relación con la resolucion
             $table->foreignId('resolution_id')->nullable()->constrained('resolutions')->nullOnDelete();
 
-            $table->boolean('captcha_required')->default(false);
-            $table->boolean('verification_pending')->default(false);
+            $table->boolean('captcha_required')->nullable();
+            $table->boolean('verification_pending')->nullable();
             $table->timestamps();
         });
     }
