@@ -10,9 +10,15 @@ class YoutubeAccount extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'email', 'password', 'phone_number', 'gender',
-        'birth_date', 'proxy_id', 'keyword', 'channel_url',
-        'status_id', 'captcha_required', 'verification_pending'
+        'name', 'email', 'password', 'phone_number_id', 'gender',
+        'birth_date', 'proxy_id', 'channel_url',
+        'status_id', 'resolution_id', 'captcha_required', 'verification_pending', 'descripcion', 'screenshots', 'start_time', 'end_time'
+    ];
+
+    protected $casts = [
+        'screenshots' => 'array',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
     ];
 
     public function status()

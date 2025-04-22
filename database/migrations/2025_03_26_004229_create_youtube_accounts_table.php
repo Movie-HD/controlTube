@@ -24,12 +24,21 @@ return new class extends Migration
             # Relación con phone_number
             $table->foreignId('phone_number_id')->nullable()->constrained('phone_numbers')->nullOnDelete();
             # Relación con el estado
-            $table->foreignId('status_id')->default(1)->constrained('account_statuses')->cascadeOnDelete();
+            $table->foreignId('status_id')->nullable()->constrained('account_statuses')->cascadeOnDelete();
             # Relación con la resolucion
             $table->foreignId('resolution_id')->nullable()->constrained('resolutions')->nullOnDelete();
 
             $table->boolean('captcha_required')->nullable();
             $table->boolean('verification_pending')->nullable();
+
+            # Campos de Horaio de Actividad
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
+
+            # Campo screenshots upload
+            $table->string('descripcion')->nullable();
+            $table->json('screenshots')->nullable();
+
             $table->timestamps();
         });
     }

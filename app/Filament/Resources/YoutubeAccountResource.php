@@ -21,6 +21,9 @@ use Filament\Tables\Columns\ToggleColumn; # Agregar si es un Toggle [Table]
 use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\TimePicker;
 
 class YoutubeAccountResource extends Resource
 {
@@ -33,6 +36,7 @@ class YoutubeAccountResource extends Resource
         return $form
             ->schema([
                 Section::make('Datos Cuenta')
+                ->collapsible()
                 ->columns([
                     'default' => 2, // Por defecto, usa 1 columna para pantallas pequeñas.
                     'sm' => 3, // A partir del tamaño 'sm', usa 2 columnas.
@@ -108,6 +112,7 @@ class YoutubeAccountResource extends Resource
                 ]),
 
                 Section::make('Datos de estado')
+                ->collapsible()
                 ->columns([
                     'default' => 2, // Por defecto, usa 1 columna para pantallas pequeñas.
                     'sm' => 3, // A partir del tamaño 'sm', usa 2 columnas.
@@ -148,6 +153,61 @@ class YoutubeAccountResource extends Resource
                         ->label('¿Verificación 15min?')
                         ->inline()
                         ->boolean(),
+                ]),
+
+                # Seccion Hora de Actividad
+                Section::make('Hora de Actividad')
+                ->collapsible()
+                ->columns([
+                    'default' => 2, // Por defecto, usa 1 columna para pantallas pequeñas.
+                    'sm' => 3, // A partir del tamaño 'sm', usa 2 columnas.
+                ])
+                ->schema([
+                    TimePicker::make('start_time')
+                                ->label('Hora de Inicio')
+                                ->seconds(false)
+                                ->closeOnDateSelection(),
+
+                    TimePicker::make('end_time')
+                                ->label('Hora de Fin')
+                                ->seconds(false),
+                ]),
+
+                # Seccion Notas Adicionales
+                Section::make('Notas Adicionales')
+                ->collapsible()
+                ->collapsed(fn ($livewire) => $livewire->getRecord() === null)
+                ->columns([
+                    'default' => 2, // Por defecto, usa 1 columna para pantallas pequeñas.
+                    'sm' => 3, // A partir del tamaño 'sm', usa 2 columnas.
+                ])
+                ->schema([
+                    RichEditor::make('descripcion')
+                    ->columnSpan(2)
+                    ->label('Descripción')
+                    ->nullable()
+                    ->toolbarButtons([
+                        'attachFiles',
+                        'blockquote',
+                        'bold',
+                        'bulletList',
+                        'codeBlock',
+                        'h2',
+                        'h3',
+                        'italic',
+                        'link',
+                        'orderedList',
+                        'redo',
+                        'strike',
+                        'undo',
+                    ]),
+                    FileUpload::make('screenshots')
+                        ->label('Adjuntar Archivos')
+                        ->preserveFilenames()
+                        ->multiple()
+                        ->reorderable()
+                        ->appendFiles()
+                        ->hiddenOn('create')
                 ])
             ]);
     }
@@ -159,16 +219,33 @@ class YoutubeAccountResource extends Resource
             ->columns([
                 TextColumn::make('name')->sortable()->searchable(),
                 TextColumn::make('email')->sortable()->searchable(),
-                TextColumn::make('status.name')->label('Estado'),
-                TextColumn::make('channel_url'),
-                TextColumn::make('proxy.proxy'),
-                TextColumn::make('keywords.keyword'),
+                TextColumn::make('status.name')
+                    ->label('Estado')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Nuevo' => 'gray',
+                        'approved' => 'success',
+                        'decline' => 'danger',
+                    }),
+                TextColumn::make('channel_url')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('proxy.proxy')
+                    ->copyable(),
+                TextColumn::make('keywords.keyword')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('captcha_required')
                     ->label('¿Verif. Bot?')
                     ->boolean(),
                 IconColumn::make('verification_pending')
                     ->label('¿Verif. 15min?')
                     ->boolean(),
+                TextColumn::make('start_time')
+                    ->label('Hora de Inicio')
+                    ->dateTime('h:i A')
+                    ->copyable(),
+                TextColumn::make('end_time')
+                    ->label('Hora de Fin')
+                    ->Time('h:i A'),
             ])
             ->filters([
                 //

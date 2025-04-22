@@ -25,6 +25,8 @@ class PhoneNumberResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'Configuracion';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -103,6 +105,7 @@ class PhoneNumberResource extends Resource
 
             TextColumn::make('registered_at')
                 ->label('Fecha de Registro')
+                ->dateTime()
                 ->sortable()
                 ->toggleable(),
 
