@@ -8,7 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class YoutubeProxy extends Model
 {
     use HasFactory;
-    protected $fillable = ['proxy', 'in_use', 'used_by_account_id'];
+    protected $fillable = [
+        'proxy',
+        'in_use',
+        'used_by_account_id',
+        'descripcion',
+        'screenshots',
+    ];
+
+    protected $casts = [
+        'in_use' => 'boolean',
+        'screenshots' => 'array',
+    ];
 
     public function usedByAccount()
     {

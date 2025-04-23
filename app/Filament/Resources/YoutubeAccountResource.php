@@ -27,6 +27,7 @@ use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Repeater;
 use Carbon\Carbon;
 use HusamTariq\FilamentTimePicker\Forms\Components\TimePickerField;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class YoutubeAccountResource extends Resource
 {
@@ -66,10 +67,27 @@ class YoutubeAccountResource extends Resource
                             titleAttribute: 'phone_number',
                             modifyQueryUsing: fn (Builder $query) => $query->where('in_use', false)
                         )
+                        ->getOptionLabelFromRecordUsing(function ($record) {
+                            $countryCode = $record->phone_country;
+                            $flag = '';
+                            if ($countryCode) {
+                                $flag = preg_replace_callback(
+                                    '/./',
+                                    function ($letter) {
+                                        return mb_chr(ord($letter[0]) + 127397);
+                                    },
+                                    strtoupper($countryCode)
+                                );
+                                $flag .= ' ';
+                            }
+                            return $flag . $record->phone_number;
+                        })
                         ->searchable()
                         ->preload()
                         ->createOptionForm([
-                            TextInput::make('phone_number')->required(),
+                            PhoneInput::make('phone_number')
+                                ->required()
+                                ->countryStatePath('phone_country'),
                             Toggle::make('is_physical_chip')
                                 ->label('¿Chip físico?')
                                 ->reactive(),
@@ -123,10 +141,14 @@ class YoutubeAccountResource extends Resource
                 ->schema([
                     Select::make('status')
                         ->label('status')
-                        ->relationship('status', 'name') # Asi obtenemos la rela el nombre de la empresa.
+                        ->relationship(
+                            name: 'status',
+                            titleAttribute: 'name',
+                            modifyQueryUsing: fn (Builder $query) => $query->orderBy('id') // Asumiendo que tienes una columna 'order' en tu tabla de estados
+                        ) # Asi obtenemos la rela el nombre de la empresa.
                         ->searchable()
                         ->preload()
-                        ->required(), # Agregamos eso para que cargue los datos del select.
+                        ->hiddenOn('create'), # Agregamos eso para que cargue los datos del select.
 
                     Select::make('proxy')
                         ->label('Proxy')
@@ -162,12 +184,12 @@ class YoutubeAccountResource extends Resource
                 Section::make('Hora de Actividad')
                 ->collapsible()
                 ->columns([
-                    'default' => 2, // Por defecto, usa 1 columna para pantallas pequeñas.
-                    'sm' => 3, // A partir del tamaño 'sm', usa 2 columnas.
+                    'default' => 1, // Por defecto, usa 1 columna para pantallas pequeñas.
+                    'sm' => 1, // A partir del tamaño 'sm', usa 2 columnas.
                 ])
                 ->schema([
                     Repeater::make('activity_times')
-                        ->label('Actividades')
+                        ->hiddenLabel()
                         ->schema([
                             TimePickerField::make('start_time')
                                 ->label('Hora de Inicio')
@@ -216,7 +238,6 @@ class YoutubeAccountResource extends Resource
                         ->multiple()
                         ->reorderable()
                         ->appendFiles()
-                        ->hiddenOn('create')
                 ])
             ]);
     }
@@ -233,8 +254,15 @@ class YoutubeAccountResource extends Resource
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'Nuevo' => 'gray',
-                        'approved' => 'success',
-                        'decline' => 'danger',
+                        'Actividad sin Cuenta' => 'warning',
+                        'Actividad con Cuenta' => 'info',
+                        'Actividad con Verificacion 15min' => 'success',
+                        'Subiendo Videos' => 'primary',
+                        'Videos Subidos' => 'success',
+                        'Videos Eliminados' => 'warning',
+                        'Cuenta YouTube Bloqueada' => 'danger',
+                        'Cuenta Google Bloqueada' => 'danger',
+                        default => 'gray',
                     }),
                 TextColumn::make('channel_url')
                     ->toggleable(isToggledHiddenByDefault: true),

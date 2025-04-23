@@ -15,6 +15,9 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Models\YoutubeAccount;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
 
 class YoutubeProxyResource extends Resource
 {
@@ -39,6 +42,41 @@ class YoutubeProxyResource extends Resource
                     ->searchable()
                     ->preload()
                     ->nullable(),
+
+                Section::make('Notas Adicionales')
+                    ->collapsible()
+                    ->collapsed(fn ($livewire) => $livewire->getRecord() === null)
+                    ->columns([
+                        'default' => 2, // Por defecto, usa 1 columna para pantallas pequeñas.
+                        'sm' => 3, // A partir del tamaño 'sm', usa 2 columnas.
+                    ])
+                    ->schema([
+                        RichEditor::make('descripcion')
+                        ->columnSpan(2)
+                        ->label('Descripción')
+                        ->nullable()
+                        ->toolbarButtons([
+                            'attachFiles',
+                            'blockquote',
+                            'bold',
+                            'bulletList',
+                            'codeBlock',
+                            'h2',
+                            'h3',
+                            'italic',
+                            'link',
+                            'orderedList',
+                            'redo',
+                            'strike',
+                            'undo',
+                        ]),
+                        FileUpload::make('screenshots')
+                            ->label('Adjuntar Archivos')
+                            ->preserveFilenames()
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
+                    ])
 
             ]);
     }

@@ -25,10 +25,14 @@ class DatabaseSeeder extends Seeder
         # Seed para estados de cuenta
         $accountStatuses = [
             'Nuevo',
-            'Activo',
-            'Suspendido',
-            'Inactivo',
-            'Pendiente de verificación',
+            'Actividad sin Cuenta',
+            'Actividad con Cuenta',
+            'Actividad con Verificacion 15min',
+            'Subiendo Videos',
+            'Videos Subidos',
+            'Videos Eliminados',
+            'Cuenta YouTube Bloqueada',
+            'Cuenta Google Bloqueada',
         ];
 
         foreach ($accountStatuses as $status) {

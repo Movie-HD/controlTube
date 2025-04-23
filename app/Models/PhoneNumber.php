@@ -14,12 +14,17 @@ class PhoneNumber extends Model
         'iccid_code',
         'registered_at',
         'in_use',
-        'used_by_account_id'
+        'used_by_account_id',
+        'phone_country',
+        'descripcion',
+        'screenshots',
     ];
 
     protected $casts = [
         'is_physical_chip' => 'boolean',
+        'in_use' => 'boolean',
         'registered_at' => 'date',
+        'screenshots' => 'array',
     ];
 
     // Relación con cuentas de YouTube

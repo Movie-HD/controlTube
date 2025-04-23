@@ -23,6 +23,13 @@ return new class extends Migration
             $table->boolean('in_use')->default(false);
             $table->foreignId('used_by_account_id')->nullable()->constrained('youtube_accounts')->nullOnDelete();
 
+            # Campo codigo pais
+            $table->string('phone_country')->nullable();
+
+            # Campo descripcion + screenshots upload
+            $table->string('descripcion')->nullable();
+            $table->json('screenshots')->nullable();
+
             $table->timestamps();
         });
     }

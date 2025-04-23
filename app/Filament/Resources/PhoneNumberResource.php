@@ -18,6 +18,10 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
+use Ysfkaya\FilamentPhoneInput\PhoneInputNumberType;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
 
 class PhoneNumberResource extends Resource
 {
@@ -31,7 +35,12 @@ class PhoneNumberResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('phone_number')->required(),
+                PhoneInput::make('phone_number')
+                    ->label('Número de Teléfono')
+                    ->countryStatePath('phone_country')
+                    ->required()
+                    ->defaultCountry('US') // Establecemos España como país por defecto
+                    ->displayNumberFormat(PhoneInputNumberType::INTERNATIONAL), // Formato internacional para mejor visualización
                 Toggle::make('is_physical_chip')
                     ->label('¿Chip físico?')
                     ->reactive(),
@@ -63,6 +72,41 @@ class PhoneNumberResource extends Resource
 
                 Toggle::make('in_use')
                     ->label('En Uso'),
+
+                Section::make('Notas Adicionales')
+                    ->collapsible()
+                    ->collapsed(fn ($livewire) => $livewire->getRecord() === null)
+                    ->columns([
+                        'default' => 2, // Por defecto, usa 1 columna para pantallas pequeñas.
+                        'sm' => 3, // A partir del tamaño 'sm', usa 2 columnas.
+                    ])
+                    ->schema([
+                        RichEditor::make('descripcion')
+                        ->columnSpan(2)
+                        ->label('Descripción')
+                        ->nullable()
+                        ->toolbarButtons([
+                            'attachFiles',
+                            'blockquote',
+                            'bold',
+                            'bulletList',
+                            'codeBlock',
+                            'h2',
+                            'h3',
+                            'italic',
+                            'link',
+                            'orderedList',
+                            'redo',
+                            'strike',
+                            'undo',
+                        ]),
+                        FileUpload::make('screenshots')
+                            ->label('Adjuntar Archivos')
+                            ->preserveFilenames()
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
+                    ])
             ]);
     }
 
@@ -74,6 +118,20 @@ class PhoneNumberResource extends Resource
                 ->label('Número de Teléfono')
                 ->searchable()
                 ->sortable(),
+                TextColumn::make('phone_country')
+                ->label('País')
+                ->formatStateUsing(function ($state) {
+                    if (!$state) return '';
+
+                    $countryCode = strtoupper($state);
+                    return preg_replace_callback(
+                        '/./',
+                        function ($letter) {
+                            return mb_chr(ord($letter[0]) + 127397);
+                        },
+                        $countryCode
+                    );
+                }),
 
             TextColumn::make('usedByAccount.name') # TextColumn::make('NombreDelMetodo.NombreDelCampo')
                 ->color('success')

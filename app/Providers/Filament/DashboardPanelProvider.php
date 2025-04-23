@@ -17,6 +17,8 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
 
 class DashboardPanelProvider extends PanelProvider
 {
@@ -27,6 +29,10 @@ class DashboardPanelProvider extends PanelProvider
             ->maxContentWidth('full')
             ->id('dashboard')
             ->path('dashboard')
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => Blade::render('<style>.mdtp__wrapper { top: calc(50% - 212px); }</style>')
+                )
             ->login()
             ->registration()
             ->topNavigation()

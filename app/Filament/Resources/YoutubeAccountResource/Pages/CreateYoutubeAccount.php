@@ -17,6 +17,9 @@ class CreateYoutubeAccount extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
+        // Aseguramos que el status_id sea 1 (nuevo)
+        $data['status_id'] = 1;
+
         $record = YoutubeAccount::create($data);
 
         if ($record->proxy_id) {
