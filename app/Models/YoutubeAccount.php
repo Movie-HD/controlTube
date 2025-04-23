@@ -12,13 +12,12 @@ class YoutubeAccount extends Model
     protected $fillable = [
         'name', 'email', 'password', 'phone_number_id', 'gender',
         'birth_date', 'proxy_id', 'channel_url',
-        'status_id', 'resolution_id', 'captcha_required', 'verification_pending', 'descripcion', 'screenshots', 'start_time', 'end_time'
+        'status_id', 'resolution_id', 'captcha_required', 'verification_pending', 'descripcion', 'screenshots', 'activity_times'
     ];
 
     protected $casts = [
         'screenshots' => 'array',
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
+        'activity_times' => 'array',
     ];
 
     public function status()

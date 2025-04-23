@@ -24,6 +24,9 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\Repeater;
+use Carbon\Carbon;
+use HusamTariq\FilamentTimePicker\Forms\Components\TimePickerField;
 
 class YoutubeAccountResource extends Resource
 {
@@ -163,14 +166,20 @@ class YoutubeAccountResource extends Resource
                     'sm' => 3, // A partir del tamaño 'sm', usa 2 columnas.
                 ])
                 ->schema([
-                    TimePicker::make('start_time')
+                    Repeater::make('activity_times')
+                        ->label('Actividades')
+                        ->schema([
+                            TimePickerField::make('start_time')
                                 ->label('Hora de Inicio')
-                                ->seconds(false)
-                                ->closeOnDateSelection(),
-
-                    TimePicker::make('end_time')
+                                ->okLabel("Confirm")
+                                ->cancelLabel("Cancel"),
+                            TimePickerField::make('end_time')
                                 ->label('Hora de Fin')
-                                ->seconds(false),
+                                ->okLabel("Confirm")
+                                ->cancelLabel("Cancel"),
+                        ])
+                        ->columns(2)
+                        ->defaultItems(1) // Opcional: muestra un bloque vacío al crear
                 ]),
 
                 # Seccion Notas Adicionales
@@ -239,13 +248,31 @@ class YoutubeAccountResource extends Resource
                 IconColumn::make('verification_pending')
                     ->label('¿Verif. 15min?')
                     ->boolean(),
-                TextColumn::make('start_time')
-                    ->label('Hora de Inicio')
-                    ->dateTime('h:i A')
-                    ->copyable(),
-                TextColumn::make('end_time')
-                    ->label('Hora de Fin')
-                    ->Time('h:i A'),
+                TextColumn::make('activity_times')
+                    ->label('Hora de Actividad')
+                    ->getStateUsing(function ($record) {
+                        $activityTimes = $record->activity_times;
+                        if (is_array($activityTimes)) {
+                            $output = '';
+                            foreach ($activityTimes as $activity) {
+                                if (is_array($activity) && isset($activity['start_time']) && isset($activity['end_time'])) {
+                                    try {
+                                        $start_time = Carbon::parse($activity['start_time'])->format('h:i A');
+                                        $end_time = Carbon::parse($activity['end_time'])->format('h:i A');
+                                        $output .= "{$start_time} - {$end_time}<br>";
+                                    } catch (\Exception $e) {
+                                        $output .= "Error al procesar la hora<br>";
+                                    }
+                                } else {
+                                    $output .= "Sin Horario<br>";
+                                }
+                            }
+                            return $output;
+                        }
+
+                        return 'Sin actividades';
+                    })
+                    ->html(),
             ])
             ->filters([
                 //

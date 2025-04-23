@@ -32,8 +32,7 @@ return new class extends Migration
             $table->boolean('verification_pending')->nullable();
 
             # Campos de Horaio de Actividad
-            $table->time('start_time')->nullable();
-            $table->time('end_time')->nullable();
+            $table->json('activity_times')->nullable();
 
             # Campo screenshots upload
             $table->string('descripcion')->nullable();
