@@ -11,6 +11,8 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
+use App\Models\NavigationLink;
+use Filament\Navigation\NavigationItem;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -46,6 +48,9 @@ class DashboardPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
+            ->navigationItems([
+                ...$this->getCustomNavigationItems(),
+            ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
@@ -65,5 +70,31 @@ class DashboardPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+    }
+
+    private function getCustomNavigationItems(): array
+    {
+        try {
+            return NavigationLink::with(['group' => function ($query) {
+                    $query->orderBy('sort_order');
+                }])
+                ->where('is_active', true)
+                ->whereHas('group', function ($query) {
+                    $query->where('is_active', true);
+                })
+                ->orderBy('sort_order')
+                ->get()
+                ->sortBy(['group.sort_order', 'sort_order'])
+                ->map(function ($link) {
+                    return NavigationItem::make($link->name)
+                        ->url($link->url, shouldOpenInNewTab: $link->open_in_new_tab)
+                        ->icon($link->icon)
+                        ->group($link->group->name)
+                        ->sort($link->sort_order);
+                })
+                ->toArray();
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 }
