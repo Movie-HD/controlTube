@@ -180,6 +180,16 @@ class NavigationLinkResource extends Resource
                     ->label('Orden')
                     ->sortable(),
             ])
+            ->groups([
+                Tables\Grouping\Group::make('group.name') // ✅ Agrupa por el nombre
+                    ->label('Grupo')
+                    ->collapsible()
+                    ->orderQueryUsing(fn ($query, $direction) =>
+                        $query->orderBy('navigation_links.created_at', 'asc')
+                    ),
+            ])
+            ->defaultGroup('group.name')
+            ->groupingSettingsHidden()
             ->filters([
                 Tables\Filters\SelectFilter::make('group_id')
                     ->label('Grupo')

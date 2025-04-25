@@ -84,6 +84,26 @@ class YoutubeAccountResource extends Resource
                         })
                         ->searchable()
                         ->preload()
+                        ->helperText(function ($state) {
+                            if (!$state) return null;
+                            $phoneNumber = \App\Models\PhoneNumber::find($state);
+                            if (!$phoneNumber) return null;
+
+                            $countryCode = $phoneNumber->phone_country;
+                            $flag = '';
+                            if ($countryCode) {
+                                $flag = preg_replace_callback(
+                                    '/./',
+                                    function ($letter) {
+                                        return mb_chr(ord($letter[0]) + 127397);
+                                    },
+                                    strtoupper($countryCode)
+                                );
+                                $flag .= ' ';
+                            }
+
+                            return $flag . $phoneNumber->phone_number;
+                        })
                         ->createOptionForm([
                             PhoneInput::make('phone_number')
                                 ->required()
@@ -158,7 +178,14 @@ class YoutubeAccountResource extends Resource
                             modifyQueryUsing: fn (Builder $query) => $query->where('in_use', false) // Filtra solo los disponibles
                         )
                         ->searchable()
-                        ->preload(), # Agregamos eso para que cargue los datos del select.
+                        ->preload() # Agregamos eso para que cargue los datos del select.
+                        ->helperText(function ($state) {
+                            if (!$state) return null;
+                            $proxy = \App\Models\YoutubeProxy::find($state);
+                            if (!$proxy) return null;
+
+                            return $proxy->proxy;
+                        }),
 
                     Select::make('resolutions')
                         ->label('Resolucion')
