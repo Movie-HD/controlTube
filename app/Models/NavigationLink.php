@@ -13,12 +13,17 @@ class NavigationLink extends Model
         'group_id',
         'sort_order',
         'open_in_new_tab',
-        'is_active'
+        'is_active',
+        'email',
+        'password',
+        'descripcion',
+        'screenshots'
     ];
 
     protected $casts = [
         'open_in_new_tab' => 'boolean',
         'is_active' => 'boolean',
+        'screenshots' => 'array',
     ];
 
     public function group()

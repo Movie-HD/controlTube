@@ -23,6 +23,14 @@ return new class extends Migration
             # Group relation
             $table->foreignId('group_id')->nullable()->constrained('navigation_groups')->nullOnDelete();
 
+            # Email + Password
+            $table->string('email')->nullable();
+            $table->string('password')->nullable();
+
+            # Descripcion + Screenshots
+            $table->text('descripcion')->nullable();
+            $table->json('screenshots')->nullable();
+
             $table->timestamps();
         });
     }

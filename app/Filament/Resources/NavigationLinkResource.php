@@ -11,6 +11,9 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Set;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
 
 class NavigationLinkResource extends Resource
 {
@@ -111,6 +114,48 @@ class NavigationLinkResource extends Resource
                 Forms\Components\Toggle::make('is_active')
                     ->label('Activo')
                     ->default(true),
+
+                Section::make('Notas Adicionales')
+                    ->collapsible()
+                    ->collapsed(fn ($livewire) => $livewire->getRecord() === null)
+                    ->columns([
+                        'default' => 2, // Por defecto, usa 1 columna para pantallas pequeñas.
+                        'sm' => 3, // A partir del tamaño 'sm', usa 2 columnas.
+                    ])
+                    ->schema([
+                        Forms\Components\TextInput::make('email')
+                            ->label('Email')
+                            ->email()
+                            ->columnSpan(1),
+                        Forms\Components\TextInput::make('password')
+                            ->label('Contraseña')
+                            ->columnSpan(1),
+                        RichEditor::make('descripcion')
+                        ->columnSpan(2)
+                        ->label('Descripción')
+                        ->nullable()
+                        ->toolbarButtons([
+                            'attachFiles',
+                            'blockquote',
+                            'bold',
+                            'bulletList',
+                            'codeBlock',
+                            'h2',
+                            'h3',
+                            'italic',
+                            'link',
+                            'orderedList',
+                            'redo',
+                            'strike',
+                            'undo',
+                        ]),
+                        FileUpload::make('screenshots')
+                            ->label('Adjuntar Archivos')
+                            ->preserveFilenames()
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
+                    ])
             ]);
     }
 
