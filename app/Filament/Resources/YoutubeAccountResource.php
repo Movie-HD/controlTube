@@ -33,7 +33,9 @@ class YoutubeAccountResource extends Resource
 {
     protected static ?string $model = YoutubeAccount::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = null;
+
+    protected static ?string $navigationLabel = '📍 Cuentas YT';
 
     public static function form(Form $form): Form
     {
@@ -273,9 +275,37 @@ class YoutubeAccountResource extends Resource
     {
         return $table
             ->defaultSort('created_at', 'desc') # Ordenar por fecha de creación
+            ->groups([
+                Tables\Grouping\Group::make('status.name')
+                    ->label('Estado')
+                    ->collapsible()
+                    ->orderQueryUsing(fn ($query, $direction) =>
+                        $query->orderBy('youtube_accounts.created_at', 'desc')
+                    ),
+            ])
+            ->defaultGroup('status.name')
+            ->groupingSettingsHidden()
             ->columns([
                 TextColumn::make('name')->sortable()->searchable(),
                 TextColumn::make('email')->sortable()->searchable(),
+                TextColumn::make('phoneNumber.phone_number')
+                    ->label('Teléfono')
+                    ->copyable()
+                    ->formatStateUsing(function ($state, $record) {
+                        $countryCode = $record->phoneNumber->phone_country ?? null;
+                        $flag = '';
+                        if ($countryCode) {
+                            $flag = preg_replace_callback(
+                                '/./',
+                                function ($letter) {
+                                    return mb_chr(ord($letter[0]) + 127397);
+                                },
+                                strtoupper($countryCode)
+                            );
+                            $flag .= ' ';
+                        }
+                        return $flag . $state;
+                    }),
                 TextColumn::make('status.name')
                     ->label('Estado')
                     ->badge()
@@ -294,7 +324,8 @@ class YoutubeAccountResource extends Resource
                 TextColumn::make('channel_url')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('proxy.proxy')
-                    ->copyable(),
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('keywords.keyword')
                     ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('captcha_required')
