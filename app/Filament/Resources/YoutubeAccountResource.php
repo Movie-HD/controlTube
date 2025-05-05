@@ -193,7 +193,16 @@ class YoutubeAccountResource extends Resource
                         ->label('Resolucion')
                         ->relationship('resolution', 'name') # Asi obtenemos la rela el nombre de la empresa.
                         ->searchable()
-                        ->preload(), # Agregamos eso para que cargue los datos del select.
+                        ->preload() # Agregamos eso para que cargue los datos del select.
+                        ->getOptionLabelFromRecordUsing(function ($record) {
+                            // Obtener la última resolución usada
+                            $ultimaResolucionId = \App\Models\YoutubeAccount::latest('created_at')->first()?->resolution?->id;
+                            // Si esta opción es la última usada, le agregamos una marca
+                            if ($ultimaResolucionId && $record->id == $ultimaResolucionId) {
+                                return '📍 ' . $record->name . ' (usado)';
+                            }
+                            return $record->name;
+                        }),
 
                     TextInput::make('channel_url')
                         ->url()
@@ -359,6 +368,16 @@ class YoutubeAccountResource extends Resource
                         return 'Sin actividades';
                     })
                     ->html(),
+                TextColumn::make('pages')
+                    ->label('Páginas')
+                    ->formatStateUsing(function ($state, $record) {
+                        // $record->pages es una colección de YoutubeAccountPage
+                        return $record->pages
+                            ->map(fn($accountPage) => $accountPage->page?->name)
+                            ->filter()
+                            ->implode(', ');
+                    })
+                    ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->filters([
                 //
