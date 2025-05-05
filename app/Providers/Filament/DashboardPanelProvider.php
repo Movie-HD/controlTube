@@ -21,6 +21,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
+use App\Filament\Pages\MovieScraperPage;
 
 class DashboardPanelProvider extends PanelProvider
 {
@@ -46,6 +47,7 @@ class DashboardPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
+                MovieScraperPage::class,
                 //Pages\Dashboard::class,
             ])
             ->navigationItems([
