@@ -221,6 +221,7 @@ class YoutubeAccountResource extends Resource
                 # Seccion Hora de Actividad
                 Section::make('Hora de Actividad')
                 ->collapsible()
+                ->collapsed()
                 ->columns([
                     'default' => 1, // Por defecto, usa 1 columna para pantallas pequeñas.
                     'sm' => 1, // A partir del tamaño 'sm', usa 2 columnas.
@@ -343,12 +344,33 @@ class YoutubeAccountResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('keywords.keyword')
                     ->toggleable(isToggledHiddenByDefault: true),
-                IconColumn::make('captcha_required')
-                    ->label('¿Verif. Bot?')
-                    ->boolean(),
-                IconColumn::make('verification_pending')
-                    ->label('¿Verif. 15min?')
-                    ->boolean(),
+                TextColumn::make('verification_status')
+                    ->label('¿Verif. Bot? / ¿Verif. 15min?')
+                    ->alignCenter()
+                    ->getStateUsing(function ($record) {
+                        $output = '';
+
+                        // Verificación de Bot
+                        if ($record->captcha_required !== null) {
+                            $botVerification = $record->captcha_required ?
+                                '<span style="--c-50:var(--success-50);--c-400:var(--success-400);--c-600:var(--success-600);" class="fi-badge flex items-center justify-center gap-x-1 rounded-md text-xs font-medium ring-1 ring-inset px-2 min-w-[theme(spacing.6)] py-1 fi-color-custom bg-custom-50 text-custom-600 ring-custom-600/10 dark:bg-custom-400/10 dark:text-custom-400 dark:ring-custom-400/30 fi-color-success">✓</span>' :
+                                '<span style="--c-50:var(--danger-50);--c-400:var(--danger-400);--c-600:var(--danger-600);" class="fi-badge flex items-center justify-center gap-x-1 rounded-md text-xs font-medium ring-1 ring-inset px-2 min-w-[theme(spacing.6)] py-1 fi-color-custom bg-custom-50 text-custom-600 ring-custom-600/10 dark:bg-custom-400/10 dark:text-custom-400 dark:ring-custom-400/30 fi-color-danger">X</span>';
+                        } else {
+                            $botVerification = '<span style="--c-50:var(--gray-50);--c-400:var(--gray-400);--c-600:var(--gray-600);" class="fi-badge flex items-center justify-center gap-x-1 rounded-md text-xs font-medium ring-1 ring-inset px-2 min-w-[theme(spacing.6)] py-1 fi-color-custom bg-custom-50 text-custom-600 ring-custom-600/10 dark:bg-custom-400/10 dark:text-custom-400 dark:ring-custom-400/30 fi-color-gray">-</span>';
+                        }
+
+                        // Verificación de 15min
+                        if ($record->verification_pending !== null) {
+                            $verification15min = $record->verification_pending ?
+                                '<span style="--c-50:var(--success-50);--c-400:var(--success-400);--c-600:var(--success-600);" class="fi-badge flex items-center justify-center gap-x-1 rounded-md text-xs font-medium ring-1 ring-inset px-2 min-w-[theme(spacing.6)] py-1 fi-color-custom bg-custom-50 text-custom-600 ring-custom-600/10 dark:bg-custom-400/10 dark:text-custom-400 dark:ring-custom-400/30 fi-color-success">✓</span>' :
+                                '<span style="--c-50:var(--danger-50);--c-400:var(--danger-400);--c-600:var(--danger-600);" class="fi-badge flex items-center justify-center gap-x-1 rounded-md text-xs font-medium ring-1 ring-inset px-2 min-w-[theme(spacing.6)] py-1 fi-color-custom bg-custom-50 text-custom-600 ring-custom-600/10 dark:bg-custom-400/10 dark:text-custom-400 dark:ring-custom-400/30 fi-color-danger">X</span>';
+                        } else {
+                            $verification15min = '<span style="--c-50:var(--gray-50);--c-400:var(--gray-400);--c-600:var(--gray-600);" class="fi-badge flex items-center justify-center gap-x-1 rounded-md text-xs font-medium ring-1 ring-inset px-2 min-w-[theme(spacing.6)] py-1 fi-color-custom bg-custom-50 text-custom-600 ring-custom-600/10 dark:bg-custom-400/10 dark:text-custom-400 dark:ring-custom-400/30 fi-color-gray">-</span>';
+                        }
+
+                        return "<div class='flex items-center gap-4'>{$botVerification} {$verification15min}</div>";
+                    })
+                    ->html(),
                 TextColumn::make('activity_times')
                     ->label('Hora de Actividad')
                     ->getStateUsing(function ($record) {
@@ -403,14 +425,14 @@ class YoutubeAccountResource extends Resource
                             };
 
                             $statusLabel = match ($video->status) {
-                                'foruploaded' => 'Por Subir',
-                                'uploaded' => 'Subido',
-                                'deleted' => 'Eliminado',
+                                'foruploaded' => '-',
+                                'uploaded' => '✓',
+                                'deleted' => 'X',
                                 default => ucfirst($video->status),
                             };
 
-                            $output .= "<div class='mb-1'>";
-                            $output .= "<span class='truncate block' style='max-width: 200px;'>{$video->video_url}</span>";
+                            $output .= "<div class='mb-1 flex items-center gap-2 mt-2' title='{$video->video_url}'>";
+                            $output .= "<span class='truncate' style='max-width: 250px;'>{$video->video_url}</span>";
                             $output .= "<span style=\"--c-50:var(--{$colorClass}-50);--c-400:var(--{$colorClass}-400);--c-600:var(--{$colorClass}-600);\"
                                 class=\"fi-badge flex items-center justify-center gap-x-1 rounded-md text-xs font-medium ring-1 ring-inset px-2 min-w-[theme(spacing.6)] py-1
                                 fi-color-custom bg-custom-50 text-custom-600 ring-custom-600/10 dark:bg-custom-400/10 dark:text-custom-400 dark:ring-custom-400/30 fi-color-{$colorClass}\">{$statusLabel}</span>";
@@ -420,7 +442,7 @@ class YoutubeAccountResource extends Resource
                         return $output;
                     })
                     ->html()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->filters([
                 //
