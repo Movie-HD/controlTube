@@ -18,9 +18,9 @@ use Filament\Forms\Components\RichEditor;
 class NavigationLinkResource extends Resource
 {
     protected static ?string $model = NavigationLink::class;
-    protected static ?string $navigationIcon = 'heroicon-o-link';
-    protected static ?string $modelLabel = 'Enlace de Navegación';
-    protected static ?string $pluralModelLabel = 'Enlaces de Navegación';
+    protected static ?string $navigationIcon = null;
+    protected static ?string $modelLabel = '🔗 Marcador';
+    protected static ?string $pluralModelLabel = '🔗 Marcadores';
     protected static ?string $navigationGroup = 'Configuracion';
 
     public static function form(Form $form): Form
@@ -162,12 +162,21 @@ class NavigationLinkResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->paginationPageOptions([20, 50, 100, 'all'])
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('url')
-                    ->label('URL'),
+                    ->label('URL')
+                    ->limit(60)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= 60) {
+                            return null;
+                        }
+                        return $state;
+                    }),
                 Tables\Columns\TextColumn::make('group.name')
                     ->label('Grupo')
                     ->searchable()
