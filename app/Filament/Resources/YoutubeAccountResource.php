@@ -295,8 +295,14 @@ class YoutubeAccountResource extends Resource
             ->defaultGroup('status.name')
             ->groupingSettingsHidden()
             ->columns([
-                TextColumn::make('name')->sortable()->searchable(),
-                TextColumn::make('email')->sortable()->searchable(),
+                TextColumn::make('name')
+                    ->label('Cuenta')
+                    ->formatStateUsing(function ($state, $record) {
+                        return "{$state}<br><span class=\"text-xs text-gray-500\">{$record->email}</span>";
+                    })
+                    ->html()
+                    ->searchable(['name', 'email'])
+                    ->sortable(),
                 TextColumn::make('phoneNumber.phone_number')
                     ->label('Teléfono')
                     ->copyable()
@@ -378,6 +384,43 @@ class YoutubeAccountResource extends Resource
                             ->implode(', ');
                     })
                     ->toggleable(isToggledHiddenByDefault: false),
+
+                TextColumn::make('videos')
+                    ->label('Videos')
+                    ->getStateUsing(function ($record) {
+                        $videos = $record->videos;
+                        if ($videos->isEmpty()) {
+                            return 'Sin videos';
+                        }
+
+                        $output = '';
+                        foreach ($videos as $video) {
+                            $colorClass = match ($video->status) {
+                                'uploaded' => 'success',
+                                'deleted' => 'danger',
+                                'foruploaded' => 'gray',
+                                default => 'gray',
+                            };
+
+                            $statusLabel = match ($video->status) {
+                                'foruploaded' => 'Por Subir',
+                                'uploaded' => 'Subido',
+                                'deleted' => 'Eliminado',
+                                default => ucfirst($video->status),
+                            };
+
+                            $output .= "<div class='mb-1'>";
+                            $output .= "<span class='truncate block' style='max-width: 200px;'>{$video->video_url}</span>";
+                            $output .= "<span style=\"--c-50:var(--{$colorClass}-50);--c-400:var(--{$colorClass}-400);--c-600:var(--{$colorClass}-600);\"
+                                class=\"fi-badge flex items-center justify-center gap-x-1 rounded-md text-xs font-medium ring-1 ring-inset px-2 min-w-[theme(spacing.6)] py-1
+                                fi-color-custom bg-custom-50 text-custom-600 ring-custom-600/10 dark:bg-custom-400/10 dark:text-custom-400 dark:ring-custom-400/30 fi-color-{$colorClass}\">{$statusLabel}</span>";
+                            $output .= "</div>";
+                        }
+
+                        return $output;
+                    })
+                    ->html()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
