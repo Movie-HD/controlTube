@@ -194,7 +194,7 @@ class NavigationLinkResource extends Resource
                     ->label('Grupo')
                     ->collapsible()
                     ->orderQueryUsing(fn ($query, $direction) =>
-                        $query->orderBy('navigation_links.created_at', 'asc')
+                        $query->orderBy('navigation_links.group_id', 'asc')
                     ),
             ])
             ->defaultGroup('group.name')
