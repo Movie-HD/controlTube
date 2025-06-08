@@ -14,7 +14,7 @@ class MovieScraperPage extends Page
 
     protected static ?string $title = ''; # Ocultamos el título "Extractor de Películas"
 
-    protected static ?string $navigationGroup = 'Configuracion';
+    #protected static ?string $navigationGroup = 'Configuracion';
 
     protected static ?int $navigationSort = 1;
 }

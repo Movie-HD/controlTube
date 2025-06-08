@@ -20,7 +20,13 @@ class NavigationLinkResource extends Resource
     protected static ?string $model = NavigationLink::class;
     protected static ?string $navigationIcon = null;
     protected static ?string $modelLabel = '🔗 Marcador';
+    // $modelLabel define la etiqueta en singular que se usará para referirse a una sola instancia del modelo en la interfaz de Filament.
+        # Por ejemplo, cuando el sistema muestra mensajes como "Crear Marcador" o "Editar Marcador", usará el valor de $modelLabel.
+
     protected static ?string $pluralModelLabel = '🔗 Marcadores';
+    // $pluralModelLabel define la etiqueta en plural para referirse a varias instancias del modelo.
+        # Por ejemplo, en la página de listado o en menús, verás textos como "Lista de Marcadores" o "Todos los Marcadores", usando el valor de $pluralModelLabel.
+
     protected static ?string $navigationGroup = 'Configuracion';
 
     public static function form(Form $form): Form

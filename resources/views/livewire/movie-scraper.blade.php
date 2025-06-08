@@ -183,6 +183,34 @@
         <p onclick="copy(this)">⏩ MIRALA AQUI 👉 <?php echo $formUrl;?></p>
         <p onclick="copy(this)">❎ Aqui pueden ver "{{ $xtitulo }}": <?php echo $formUrl;?></p>
     </x-filament::section>
+
+    @if(!empty($urlHistory))
+        <div style="
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            min-width: 300px;
+            max-width: 400px;
+            max-height: 60vh;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        ">
+            <div style="font-weight: bold; padding: 4px 6px; background-color:#000; border-bottom: solid #222224 2px">
+                Historial de URLs
+            </div>
+            <ul style="list-style: none; padding: 0; margin: 0;padding: 4px 6px; background-color:#000">
+                @foreach($urlHistory as $url)
+                    <li style="margin-bottom: 6px; word-break: break-all; background-color:#18181b">
+                        <span style="padding:2px 6px; border-radius:4px;">{{ $url }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 </div>
 
     <style>

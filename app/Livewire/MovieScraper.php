@@ -11,6 +11,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
+use App\Models\ScrapedUrl;
 
 class MovieScraper extends Component implements HasForms
 {
@@ -30,6 +31,8 @@ class MovieScraper extends Component implements HasForms
     public $keywords = null;
     public $imagen = null;
 
+    public $urlHistory = [];
+
     // Definir reglas de validación
     protected function rules()
     {
@@ -45,7 +48,14 @@ class MovieScraper extends Component implements HasForms
             'formTitle' => $this->formTitle,
             'formUrl' => $this->formUrl,
         ]);
+
+        $this->loadUrlHistory();
     }
+
+    public function loadUrlHistory()
+{
+    $this->urlHistory = ScrapedUrl::orderByDesc('created_at')->limit(10)->pluck('url')->toArray();
+}
 
     public function form(Form $form): Form
     {
@@ -71,6 +81,10 @@ class MovieScraper extends Component implements HasForms
 
         // Validar los datos
         $this->validate();
+
+        // Guardar la URL en el historial
+    ScrapedUrl::create(['url' => $this->formUrl]);
+    $this->loadUrlHistory();
 
         $urlx = $this->formUrl;
 
