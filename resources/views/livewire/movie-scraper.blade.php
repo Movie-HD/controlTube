@@ -15,6 +15,41 @@
         <p onclick="copy(this)">{{ $xtitulo }}</p>
     </x-filament::section>
 
+    {{-- Resultados de búsqueda TMDB --}}
+    @if (!empty($tmdbResults))
+        <x-filament::section>
+            <x-slot name="heading">Resultados en TMDB</x-slot>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                @foreach ($tmdbResults as $movie)
+                    <div class="border rounded p-2 bg-gray-900 flex flex-col items-center">
+                        <div>
+                            @if($movie['poster_path'])
+                                <img src="https://image.tmdb.org/t/p/w185{{ $movie['poster_path'] }}" alt="Poster" class="mb-2 rounded shadow">
+                            @endif
+                        </div>
+                        <div class="font-bold text-center">{{ $movie['title'] }} ({{ $movie['release_date'] ?? 'N/A' }})</div>
+                        <div class="text-xs text-gray-400 mb-2 text-center">{{ $movie['overview'] }}</div>
+                        <button wire:click="selectTmdbMovie({{ $movie['id'] }})" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-800 rounded text-white mt-2">Seleccionar</button>
+                    </div>
+                @endforeach
+            </div>
+        </x-filament::section>
+    @endif
+
+    {{-- Mostrar imágenes de fondo si hay una película seleccionada --}}
+    @if ($selectedTmdbMovie && !empty($tmdbBackdrops))
+        <x-filament::section>
+            <x-slot name="heading">Fondos de {{ $selectedTmdbMovie['title'] }}</x-slot>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
+                @foreach ($tmdbBackdrops as $backdrop)
+                    <div class="bg-gray-800 rounded overflow-hidden flex items-center justify-center">
+                        <img src="https://image.tmdb.org/t/p/w500{{ $backdrop['file_path'] }}" alt="Backdrop" class="w-full h-40 object-cover">
+                    </div>
+                @endforeach
+            </div>
+        </x-filament::section>
+    @endif
+
     {{-- Contenedor Tabs --}}
     <x-filament::section>
         <div x-data="{ activeTab: 'titulo' }">

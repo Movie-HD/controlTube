@@ -33,6 +33,12 @@ class MovieScraper extends Component implements HasForms
 
     public $urlHistory = [];
 
+    // TMDB
+    public $tmdbResults = [];
+    public $selectedTmdbMovie = null;
+    public $tmdbBackdrops = [];
+    private $tmdbApiKey = '46a5b7d36b5a603dfab0482e7844c00a';
+
     // Definir reglas de validación
     protected function rules()
     {
@@ -74,6 +80,10 @@ class MovieScraper extends Component implements HasForms
 
     public function scrape(): void
     {
+        // Limpiar selección previa de TMDB #NUEVO
+        $this->selectedTmdbMovie = null;
+        $this->tmdbBackdrops = [];
+
         // Obtener datos del formulario y actualizar propiedades
         $data = $this->form->getState();
         $this->formTitle = $data['formTitle'];
@@ -83,8 +93,8 @@ class MovieScraper extends Component implements HasForms
         $this->validate();
 
         // Guardar la URL en el historial
-    ScrapedUrl::create(['url' => $this->formUrl]);
-    $this->loadUrlHistory();
+        ScrapedUrl::create(['url' => $this->formUrl]);
+        $this->loadUrlHistory();
 
         $urlx = $this->formUrl;
 
@@ -99,6 +109,9 @@ class MovieScraper extends Component implements HasForms
         // Si el usuario ingresó un título, úsalo; si no, usa el extraído
         $this->xtitulo = $this->formTitle ?: $this->titulo;
         $this->noPuntos = str_replace('.', '', $this->xtitulo);
+
+        // Buscar automáticamente en TMDB
+        $this->searchTmdbMovie();
     }
 
     private function scrapeOnlipeli($url): void
@@ -160,6 +173,45 @@ class MovieScraper extends Component implements HasForms
         $data = curl_exec($ch);
         curl_close($ch);
         return $data;
+    }
+
+    // Buscar películas en TMDB por título
+    public function searchTmdbMovie()
+    {
+        $query = $this->xtitulo;
+        if (empty($query)) {
+            $this->tmdbResults = [];
+            return;
+        }
+        $client = new \GuzzleHttp\Client();
+        $url = 'https://api.themoviedb.org/3/search/movie?api_key=' . $this->tmdbApiKey . '&query=' . urlencode($query) . '&language=es';
+        try {
+            $response = $client->get($url);
+            $data = json_decode($response->getBody(), true);
+            $this->tmdbResults = $data['results'] ?? [];
+        } catch (\Exception $e) {
+            $this->tmdbResults = [];
+        }
+    }
+
+    // Seleccionar película de TMDB y cargar imágenes
+    public function selectTmdbMovie($movieId)
+    {
+        $this->selectedTmdbMovie = null;
+        $this->tmdbBackdrops = [];
+        $client = new \GuzzleHttp\Client();
+        $url = 'https://api.themoviedb.org/3/movie/' . $movieId . '?api_key=' . $this->tmdbApiKey . '&language=es';
+        $imagesUrl = 'https://api.themoviedb.org/3/movie/' . $movieId . '/images?api_key=' . $this->tmdbApiKey;
+        try {
+            $response = $client->get($url);
+            $this->selectedTmdbMovie = json_decode($response->getBody(), true);
+            $imagesResponse = $client->get($imagesUrl);
+            $imagesData = json_decode($imagesResponse->getBody(), true);
+            $this->tmdbBackdrops = $imagesData['backdrops'] ?? [];
+        } catch (\Exception $e) {
+            $this->selectedTmdbMovie = null;
+            $this->tmdbBackdrops = [];
+        }
     }
 
     public function render(): View
