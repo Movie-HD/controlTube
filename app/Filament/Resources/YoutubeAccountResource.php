@@ -2,11 +2,26 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use App\Models\PhoneNumber;
+use Filament\Actions\Action;
+use App\Models\YoutubeProxy;
+use Filament\Tables\Grouping\Group;
+use Exception;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\YoutubeAccountResource\RelationManagers\KeywordsRelationManager;
+use App\Filament\Resources\YoutubeAccountResource\RelationManagers\VideosRelationManager;
+use App\Filament\Resources\YoutubeAccountResource\RelationManagers\PagesRelationManager;
+use App\Filament\Resources\YoutubeAccountResource\Pages\ListYoutubeAccounts;
+use App\Filament\Resources\YoutubeAccountResource\Pages\CreateYoutubeAccount;
+use App\Filament\Resources\YoutubeAccountResource\Pages\EditYoutubeAccount;
 use App\Filament\Resources\YoutubeAccountResource\Pages;
 use App\Filament\Resources\YoutubeAccountResource\RelationManagers;
 use App\Models\YoutubeAccount;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -17,8 +32,7 @@ use Filament\Forms\Components\DatePicker; # Agregar si es un DatePicker [Form]
 use Filament\Forms\Components\Select; # Agregar si es un Select [Form]
 use Filament\Forms\Components\Toggle; # Agregar si es un Toggle [Form]
 use Filament\Tables\Columns\TextColumn; # Agregar si es un Column [Table]
-use Filament\Tables\Columns\ToggleColumn; # Agregar si es un Toggle [Table]
-use Filament\Forms\Components\Section;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\FileUpload;
@@ -33,14 +47,14 @@ class YoutubeAccountResource extends Resource
 {
     protected static ?string $model = YoutubeAccount::class;
 
-    protected static ?string $navigationIcon = null;
+    protected static string | \BackedEnum | null $navigationIcon = null;
 
     protected static ?string $navigationLabel = '📍 Cuentas YT';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make('Datos Cuenta')
                 ->collapsible()
                 ->columns([
@@ -88,7 +102,7 @@ class YoutubeAccountResource extends Resource
                         ->preload()
                         ->helperText(function ($state) {
                             if (!$state) return null;
-                            $phoneNumber = \App\Models\PhoneNumber::find($state);
+                            $phoneNumber = PhoneNumber::find($state);
                             if (!$phoneNumber) return null;
 
                             $countryCode = $phoneNumber->phone_country;
@@ -126,7 +140,7 @@ class YoutubeAccountResource extends Resource
                                 ->label('Código ICCID')
                                 ->visible(fn ($get) => $get('is_physical_chip'))
                                 ->suffixAction(
-                                    Forms\Components\Actions\Action::make('scan_qr')
+                                    Action::make('scan_qr')
                                         ->icon('heroicon-o-qr-code')
                                         ->label('Escanear')
                                         ->modalHeading('Escanear código QR')
@@ -183,7 +197,7 @@ class YoutubeAccountResource extends Resource
                         ->preload() # Agregamos eso para que cargue los datos del select.
                         ->helperText(function ($state) {
                             if (!$state) return null;
-                            $proxy = \App\Models\YoutubeProxy::find($state);
+                            $proxy = YoutubeProxy::find($state);
                             if (!$proxy) return null;
 
                             return $proxy->proxy;
@@ -196,7 +210,7 @@ class YoutubeAccountResource extends Resource
                         ->preload() # Agregamos eso para que cargue los datos del select.
                         ->getOptionLabelFromRecordUsing(function ($record) {
                             // Obtener la última resolución usada
-                            $ultimaResolucionId = \App\Models\YoutubeAccount::latest('created_at')->first()?->resolution?->id;
+                            $ultimaResolucionId = YoutubeAccount::latest('created_at')->first()?->resolution?->id;
                             // Si esta opción es la última usada, le agregamos una marca
                             if ($ultimaResolucionId && $record->id == $ultimaResolucionId) {
                                 return '📍 ' . $record->name . ' (usado)';
@@ -286,7 +300,7 @@ class YoutubeAccountResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc') # Ordenar por fecha de creación
             ->groups([
-                Tables\Grouping\Group::make('status.name')
+                Group::make('status.name')
                     ->label('Estado')
                     ->collapsible()
                     ->orderQueryUsing(fn ($query, $direction) =>
@@ -383,7 +397,7 @@ class YoutubeAccountResource extends Resource
                                         $start_time = Carbon::parse($activity['start_time'])->format('h:i A');
                                         $end_time = Carbon::parse($activity['end_time'])->format('h:i A');
                                         $output .= "{$start_time} - {$end_time}<br>";
-                                    } catch (\Exception $e) {
+                                    } catch (Exception $e) {
                                         $output .= "Error al procesar la hora<br>";
                                     }
                                 } else {
@@ -447,12 +461,12 @@ class YoutubeAccountResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -460,9 +474,9 @@ class YoutubeAccountResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\KeywordsRelationManager::class,
-            RelationManagers\VideosRelationManager::class,
-            RelationManagers\PagesRelationManager::class,
+            KeywordsRelationManager::class,
+            VideosRelationManager::class,
+            PagesRelationManager::class,
             # php artisan make:filament-relation-manager NombreResource NombreMetodoRelacion CampoRelacion
         ];
     }
@@ -470,9 +484,9 @@ class YoutubeAccountResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListYoutubeAccounts::route('/'),
-            'create' => Pages\CreateYoutubeAccount::route('/create'),
-            'edit' => Pages\EditYoutubeAccount::route('/{record}/edit'),
+            'index' => ListYoutubeAccounts::route('/'),
+            'create' => CreateYoutubeAccount::route('/create'),
+            'edit' => EditYoutubeAccount::route('/{record}/edit'),
         ];
     }
 }

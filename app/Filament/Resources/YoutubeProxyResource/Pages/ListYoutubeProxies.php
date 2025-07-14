@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\YoutubeProxyResource\Pages;
 
+use Filament\Actions\CreateAction;
+use Filament\Actions\Action;
 use App\Filament\Resources\YoutubeProxyResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -16,17 +18,17 @@ class ListYoutubeProxies extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
-            Actions\Action::make('importProxies')
+            CreateAction::make(),
+            Action::make('importProxies')
                 ->label('Importar Proxies')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('success')
                 ->size('lg')
                 ->outlined()
                 ->modalSubmitAction(
-                    fn (Actions\StaticAction $action) => $action->label('Importar')->color('primary')
+                    fn (Action $action) => $action->label('Importar')->color('primary')
                 )
-                ->form([
+                ->schema([
                     Textarea::make('proxies_list')
                         ->label('Lista de Proxies')
                         ->placeholder('Pega aquí la lista de proxies, cada uno en una línea.')

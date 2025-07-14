@@ -2,19 +2,25 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\YoutubePageResource\Pages\ListYoutubePages;
+use App\Filament\Resources\YoutubePageResource\Pages\CreateYoutubePage;
+use App\Filament\Resources\YoutubePageResource\Pages\EditYoutubePage;
 use App\Filament\Resources\YoutubePageResource\Pages;
 use App\Filament\Resources\YoutubePageResource\RelationManagers;
 use App\Models\YoutubePage;
 use Filament\Forms;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 
@@ -22,14 +28,14 @@ class YoutubePageResource extends Resource
 {
     protected static ?string $model = YoutubePage::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup = 'Configuracion';
+    protected static string | \UnitEnum | null $navigationGroup = 'Configuracion';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('name')
                     ->label('Nombre de la Página')
                     ->required(),
@@ -84,12 +90,12 @@ class YoutubePageResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -104,9 +110,9 @@ class YoutubePageResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListYoutubePages::route('/'),
-            'create' => Pages\CreateYoutubePage::route('/create'),
-            'edit' => Pages\EditYoutubePage::route('/{record}/edit'),
+            'index' => ListYoutubePages::route('/'),
+            'create' => CreateYoutubePage::route('/create'),
+            'edit' => EditYoutubePage::route('/{record}/edit'),
         ];
     }
 }

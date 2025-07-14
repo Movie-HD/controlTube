@@ -2,11 +2,19 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Actions\Action;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\PhoneNumberResource\Pages\ListPhoneNumbers;
+use App\Filament\Resources\PhoneNumberResource\Pages\CreatePhoneNumber;
+use App\Filament\Resources\PhoneNumberResource\Pages\EditPhoneNumber;
 use App\Filament\Resources\PhoneNumberResource\Pages;
 use App\Filament\Resources\PhoneNumberResource\RelationManagers;
 use App\Models\PhoneNumber;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -15,7 +23,6 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
@@ -27,14 +34,14 @@ class PhoneNumberResource extends Resource
 {
     protected static ?string $model = PhoneNumber::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup = 'Configuracion';
+    protected static string | \UnitEnum | null $navigationGroup = 'Configuracion';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 PhoneInput::make('phone_number')
                     ->label('Número de Teléfono')
                     ->countryStatePath('phone_country')
@@ -57,7 +64,7 @@ class PhoneNumberResource extends Resource
                     ->label('Código ICCID')
                     ->visible(fn ($get) => $get('is_physical_chip'))
                     ->suffixAction(
-                        Forms\Components\Actions\Action::make('scan_qr')
+                        Action::make('scan_qr')
                             ->icon('heroicon-o-qr-code')
                             ->label('Escanear')
                             ->modalHeading('Escanear código QR')
@@ -176,12 +183,12 @@ class PhoneNumberResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -196,9 +203,9 @@ class PhoneNumberResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPhoneNumbers::route('/'),
-            'create' => Pages\CreatePhoneNumber::route('/create'),
-            'edit' => Pages\EditPhoneNumber::route('/{record}/edit'),
+            'index' => ListPhoneNumbers::route('/'),
+            'create' => CreatePhoneNumber::route('/create'),
+            'edit' => EditPhoneNumber::route('/{record}/edit'),
         ];
     }
 }

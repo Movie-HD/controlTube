@@ -2,23 +2,39 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Set;
+use App\Models\NavigationGroup;
+use Filament\Schemas\Components\Section;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Grouping\Group;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\NavigationLinkResource\Pages\ListNavigationLinks;
+use App\Filament\Resources\NavigationLinkResource\Pages\CreateNavigationLink;
+use App\Filament\Resources\NavigationLinkResource\Pages\EditNavigationLink;
 use App\Filament\Resources\NavigationLinkResource\Pages;
 use App\Models\NavigationLink;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Set;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 
 class NavigationLinkResource extends Resource
 {
     protected static ?string $model = NavigationLink::class;
-    protected static ?string $navigationIcon = null;
+    protected static string | \BackedEnum | null $navigationIcon = null;
     protected static ?string $modelLabel = '🔗 Marcador';
     // $modelLabel define la etiqueta en singular que se usará para referirse a una sola instancia del modelo en la interfaz de Filament.
         # Por ejemplo, cuando el sistema muestra mensajes como "Crear Marcador" o "Editar Marcador", usará el valor de $modelLabel.
@@ -27,24 +43,24 @@ class NavigationLinkResource extends Resource
     // $pluralModelLabel define la etiqueta en plural para referirse a varias instancias del modelo.
         # Por ejemplo, en la página de listado o en menús, verás textos como "Lista de Marcadores" o "Todos los Marcadores", usando el valor de $pluralModelLabel.
 
-    protected static ?string $navigationGroup = 'Configuracion';
+    protected static string | \UnitEnum | null $navigationGroup = 'Configuracion';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')
+        return $schema
+            ->components([
+                TextInput::make('name')
                     ->label('Nombre')
                     ->required(),
-                Forms\Components\TextInput::make('url')
+                TextInput::make('url')
                     ->label('URL')
                     ->required()
                     ->url(),
-                Forms\Components\TextInput::make('icon')
+                TextInput::make('icon')
                     ->label('Icono')
                     ->default('heroicon-o-link')
                     ->required(),
-                Forms\Components\Select::make('group_id')
+                Select::make('group_id')
                     ->label('Grupo')
                     ->relationship('group', 'name')
                     ->hintAction(
@@ -52,11 +68,11 @@ class NavigationLinkResource extends Resource
                             ->label('Crear')
                             ->icon('heroicon-m-plus')
                             ->modalHeading('Nuevo Grupo')
-                            ->form([
-                                Forms\Components\TextInput::make('name')
+                            ->schema([
+                                TextInput::make('name')
                                     ->label('Nombre')
                                     ->required(),
-                                Forms\Components\Select::make('color')
+                                Select::make('color')
                                     ->label('Color')
                                     ->options([
                                         'primary' => 'Principal',
@@ -68,25 +84,25 @@ class NavigationLinkResource extends Resource
                                     ])
                                     ->default('primary')
                                     ->required(),
-                                Forms\Components\TextInput::make('sort_order')
+                                TextInput::make('sort_order')
                                     ->label('Orden')
                                     ->numeric()
                                     ->default(0),
-                                Forms\Components\Toggle::make('is_active')
+                                Toggle::make('is_active')
                                     ->label('Activo')
                                     ->default(true),
                             ])
                             ->action(function (array $data, Set $set) {
-                                $new = \App\Models\NavigationGroup::create($data);
+                                $new = NavigationGroup::create($data);
                                 // ✅ Actualiza el select con la nueva opción
                                 $set('group_id', $new->id);
                             })
                     )
                     ->editOptionForm([
-                        Forms\Components\TextInput::make('name')
+                        TextInput::make('name')
                             ->label('Nombre')
                             ->required(),
-                        Forms\Components\Select::make('color')
+                        Select::make('color')
                             ->label('Color')
                             ->options([
                                 'primary' => 'Principal',
@@ -99,25 +115,25 @@ class NavigationLinkResource extends Resource
                             ])
                             ->default('primary')
                             ->required(),
-                        Forms\Components\TextInput::make('sort_order')
+                        TextInput::make('sort_order')
                             ->label('Orden')
                             ->numeric()
                             ->default(0),
-                        Forms\Components\Toggle::make('is_active')
+                        Toggle::make('is_active')
                             ->label('Activo')
                             ->default(true),
                     ])
                     ->searchable()
                     ->preload()
                     ->required(),
-                Forms\Components\TextInput::make('sort_order')
+                TextInput::make('sort_order')
                     ->label('Orden')
                     ->numeric()
                     ->default(0),
-                Forms\Components\Toggle::make('open_in_new_tab')
+                Toggle::make('open_in_new_tab')
                     ->label('Abrir en nueva pestaña')
                     ->default(true),
-                Forms\Components\Toggle::make('is_active')
+                Toggle::make('is_active')
                     ->label('Activo')
                     ->default(true),
 
@@ -129,11 +145,11 @@ class NavigationLinkResource extends Resource
                         'sm' => 3, // A partir del tamaño 'sm', usa 2 columnas.
                     ])
                     ->schema([
-                        Forms\Components\TextInput::make('email')
+                        TextInput::make('email')
                             ->label('Email')
                             ->email()
                             ->columnSpan(1),
-                        Forms\Components\TextInput::make('password')
+                        TextInput::make('password')
                             ->label('Contraseña')
                             ->columnSpan(1),
                         RichEditor::make('descripcion')
@@ -170,33 +186,33 @@ class NavigationLinkResource extends Resource
         return $table
             ->paginationPageOptions([20, 50, 100, 'all'])
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('Nombre')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('url')
+                TextColumn::make('url')
                     ->label('URL')
                     ->limit(60)
-                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                    ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
                         if (strlen($state) <= 60) {
                             return null;
                         }
                         return $state;
                     }),
-                Tables\Columns\TextColumn::make('group.name')
+                TextColumn::make('group.name')
                     ->label('Grupo')
                     ->searchable()
                     ->badge()
                     ->color(fn (NavigationLink $record): string => $record->group?->color ?? 'gray'),
-                Tables\Columns\IconColumn::make('is_active')
+                IconColumn::make('is_active')
                     ->label('Activo')
                     ->boolean(),
-                Tables\Columns\TextColumn::make('sort_order')
+                TextColumn::make('sort_order')
                     ->label('Orden')
                     ->sortable(),
             ])
             ->groups([
-                Tables\Grouping\Group::make('group.name') // ✅ Agrupa por el nombre
+                Group::make('group.name') // ✅ Agrupa por el nombre
                     ->label('Grupo')
                     ->collapsible()
                     ->orderQueryUsing(fn ($query, $direction) =>
@@ -206,19 +222,19 @@ class NavigationLinkResource extends Resource
             ->defaultGroup('group.name')
             ->groupingSettingsHidden()
             ->filters([
-                Tables\Filters\SelectFilter::make('group_id')
+                SelectFilter::make('group_id')
                     ->label('Grupo')
                     ->relationship('group', 'name'),
-                Tables\Filters\TernaryFilter::make('is_active')
+                TernaryFilter::make('is_active')
                     ->label('Activo'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -226,9 +242,9 @@ class NavigationLinkResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListNavigationLinks::route('/'),
-            'create' => Pages\CreateNavigationLink::route('/create'),
-            'edit' => Pages\EditNavigationLink::route('/{record}/edit'),
+            'index' => ListNavigationLinks::route('/'),
+            'create' => CreateNavigationLink::route('/create'),
+            'edit' => EditNavigationLink::route('/{record}/edit'),
         ];
     }
 }

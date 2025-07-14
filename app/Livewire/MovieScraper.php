@@ -2,13 +2,15 @@
 
 namespace App\Livewire;
 
+use Filament\Schemas\Schema;
+use GuzzleHttp\Client;
+use Exception;
 use DOMDocument;
 use DOMXPath;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 use App\Models\ScrapedUrl;
@@ -63,10 +65,10 @@ class MovieScraper extends Component implements HasForms
     $this->urlHistory = ScrapedUrl::orderByDesc('created_at')->limit(10)->pluck('url')->toArray();
 }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('formTitle')
                     ->label('Título')
                     ->placeholder('Título...'),
@@ -183,13 +185,13 @@ class MovieScraper extends Component implements HasForms
             $this->tmdbResults = [];
             return;
         }
-        $client = new \GuzzleHttp\Client();
+        $client = new Client();
         $url = 'https://api.themoviedb.org/3/search/movie?api_key=' . $this->tmdbApiKey . '&query=' . urlencode($query) . '&language=es';
         try {
             $response = $client->get($url);
             $data = json_decode($response->getBody(), true);
             $this->tmdbResults = $data['results'] ?? [];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->tmdbResults = [];
         }
     }
@@ -199,7 +201,7 @@ class MovieScraper extends Component implements HasForms
     {
         $this->selectedTmdbMovie = null;
         $this->tmdbBackdrops = [];
-        $client = new \GuzzleHttp\Client();
+        $client = new Client();
         $url = 'https://api.themoviedb.org/3/movie/' . $movieId . '?api_key=' . $this->tmdbApiKey . '&language=es';
         $imagesUrl = 'https://api.themoviedb.org/3/movie/' . $movieId . '/images?api_key=' . $this->tmdbApiKey;
         try {
@@ -208,7 +210,7 @@ class MovieScraper extends Component implements HasForms
             $imagesResponse = $client->get($imagesUrl);
             $imagesData = json_decode($imagesResponse->getBody(), true);
             $this->tmdbBackdrops = $imagesData['backdrops'] ?? [];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->selectedTmdbMovie = null;
             $this->tmdbBackdrops = [];
         }

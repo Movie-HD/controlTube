@@ -2,8 +2,16 @@
 
 namespace App\Filament\Resources\YoutubeAccountResource\RelationManagers;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\CreateAction;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -17,11 +25,11 @@ class KeywordsRelationManager extends RelationManager
 {
     protected static string $relationship = 'keywords';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('keyword')
+        return $schema
+            ->components([
+                TextInput::make('keyword')
                     ->required()
                     ->maxLength(255),
             ]);
@@ -32,30 +40,30 @@ class KeywordsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('keyword')
             ->columns([
-                Tables\Columns\TextColumn::make('keyword'),
+                TextColumn::make('keyword'),
                 ToggleColumn::make('used'),
             ])
             ->filters([
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
-                Tables\Actions\Action::make('importKeywords')
+                CreateAction::make(),
+                Action::make('importKeywords')
                     ->label('Importar Keywords')
                     ->icon('heroicon-o-arrow-up-tray')
                     ->color('success')
                     ->size('lg')
                     ->outlined()
                     #->modalSubmitActionLabel('Confirmar Importación') // Cambiar texto del botón principal
-                    ->modalSubmitAction(fn (\Filament\Actions\StaticAction $action) => $action
+                    ->modalSubmitAction(fn (Action $action) => $action
                         ->label('Importar')
                         ->color('primary')
                     )
-                    ->modalCancelAction(fn (\Filament\Actions\StaticAction $action) => $action
+                    ->modalCancelAction(fn (Action $action) => $action
                         ->label('Cancelar')
                         ->color('danger')
                     )
-                    ->form([
+                    ->schema([
                         Textarea::make('keywords_list')
                             ->label('Lista de Keywords')
                             ->placeholder('Pega aquí la lista de keywords, cada una en una línea.')
@@ -78,13 +86,13 @@ class KeywordsRelationManager extends RelationManager
                             ->send();
                     }),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

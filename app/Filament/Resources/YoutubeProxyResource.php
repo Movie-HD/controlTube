@@ -2,11 +2,22 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\YoutubeProxyResource\Pages\ListYoutubeProxies;
+use App\Filament\Resources\YoutubeProxyResource\Pages\CreateYoutubeProxy;
+use App\Filament\Resources\YoutubeProxyResource\Pages\EditYoutubeProxy;
 use App\Filament\Resources\YoutubeProxyResource\Pages;
 use App\Filament\Resources\YoutubeProxyResource\RelationManagers;
 use App\Models\YoutubeProxy;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -15,7 +26,6 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Models\YoutubeAccount;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ToggleColumn;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 
@@ -23,20 +33,20 @@ class YoutubeProxyResource extends Resource
 {
     protected static ?string $model = YoutubeProxy::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup = 'Configuracion';
+    protected static string | \UnitEnum | null $navigationGroup = 'Configuracion';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('proxy')
+        return $schema
+            ->components([
+                TextInput::make('proxy')
                 ->label('Proxy Address')
                 ->required(),
-                Forms\Components\Toggle::make('in_use')
+                Toggle::make('in_use')
                     ->label('En Uso'),
-                Forms\Components\Select::make('used_by_account_id')
+                Select::make('used_by_account_id')
                     ->label('Cuenta de YouTube')
                     ->relationship('usedByAccount', 'name') // Usa relación en vez de pluck()
                     ->searchable()
@@ -85,7 +95,7 @@ class YoutubeProxyResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('proxy')
+                TextColumn::make('proxy')
                     ->label('Proxy')
                     ->sortable()
                     ->searchable(),
@@ -96,12 +106,12 @@ class YoutubeProxyResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -116,9 +126,9 @@ class YoutubeProxyResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListYoutubeProxies::route('/'),
-            'create' => Pages\CreateYoutubeProxy::route('/create'),
-            'edit' => Pages\EditYoutubeProxy::route('/{record}/edit'),
+            'index' => ListYoutubeProxies::route('/'),
+            'create' => CreateYoutubeProxy::route('/create'),
+            'edit' => EditYoutubeProxy::route('/{record}/edit'),
         ];
     }
 }

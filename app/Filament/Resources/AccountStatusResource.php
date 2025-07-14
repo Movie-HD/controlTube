@@ -2,11 +2,17 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\AccountStatusResource\Pages\ListAccountStatuses;
+use App\Filament\Resources\AccountStatusResource\Pages\CreateAccountStatus;
+use App\Filament\Resources\AccountStatusResource\Pages\EditAccountStatus;
 use App\Filament\Resources\AccountStatusResource\Pages;
 use App\Filament\Resources\AccountStatusResource\RelationManagers;
 use App\Models\AccountStatus;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -20,14 +26,14 @@ class AccountStatusResource extends Resource
 {
     protected static ?string $model = AccountStatus::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup = 'Configuracion';
+    protected static string | \UnitEnum | null $navigationGroup = 'Configuracion';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('name')->required(),
                 Textarea::make('description'),
             ]);
@@ -43,12 +49,12 @@ class AccountStatusResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -63,9 +69,9 @@ class AccountStatusResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAccountStatuses::route('/'),
-            'create' => Pages\CreateAccountStatus::route('/create'),
-            'edit' => Pages\EditAccountStatus::route('/{record}/edit'),
+            'index' => ListAccountStatuses::route('/'),
+            'create' => CreateAccountStatus::route('/create'),
+            'edit' => EditAccountStatus::route('/{record}/edit'),
         ];
     }
 }

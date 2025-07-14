@@ -6,9 +6,9 @@ use Filament\Pages\Page;
 
 class MovieScraperPage extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-film';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-film';
 
-    protected static string $view = 'filament.pages.movie-scraper-page';
+    protected string $view = 'filament.pages.movie-scraper-page';
 
     protected static ?string $navigationLabel = 'Movie Scraper';
 
