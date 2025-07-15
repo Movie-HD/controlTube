@@ -84,6 +84,15 @@ class YoutubeAccountResource extends Resource
                             titleAttribute: 'phone_number',
                             modifyQueryUsing: fn (Builder $query) => $query->where('in_use', false)
                         )
+
+                        # ✅ Solucionamos el Error del Select con relationship() usando getOptionLabelUsing()
+                        # Filament mostraba solo el ID, porque no encuentra el label del valor ya guardado (modifyQueryUsing() altera la consulta).
+                        # getOptionLabelUsing() solo sirve para recuperar el label del valor seleccionado.
+                        ->getOptionLabelUsing(fn ($value) =>
+                            \App\Models\PhoneNumber::query()
+                                ->where('id', $value)
+                                ->value('phone_number')
+                        )
                         ->getOptionLabelFromRecordUsing(function ($record) {
                             $countryCode = $record->phone_country;
                             $flag = '';
@@ -193,6 +202,15 @@ class YoutubeAccountResource extends Resource
                             name: 'proxy',
                             titleAttribute: 'proxy',
                             modifyQueryUsing: fn (Builder $query) => $query->where('in_use', false) // Filtra solo los disponibles
+                        )
+
+                        # ✅ Solucionamos el Error del Select con relationship() usando getOptionLabelUsing()
+                        # Filament mostraba solo el ID, porque no encuentra el label del valor ya guardado (modifyQueryUsing() altera la consulta).
+                        # getOptionLabelUsing() solo sirve para recuperar el label del valor seleccionado.
+                        ->getOptionLabelUsing(fn ($value) =>
+                            \App\Models\YoutubeProxy::query()
+                                ->where('id', $value)
+                                ->value('proxy')
                         )
                         ->searchable()
                         ->preload() # Agregamos eso para que cargue los datos del select.
