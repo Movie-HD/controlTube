@@ -25,6 +25,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
 use App\Filament\Pages\MovieScraperPage;
+use Filament\Support\Facades\FilamentView;
 
 class DashboardPanelProvider extends PanelProvider
 {
@@ -75,6 +76,34 @@ class DashboardPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+    }
+
+    public function boot(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::PAGE_START, # Puedes usar otros hooks según dónde quieres el CSS
+            fn (): string => '<style>
+                main.fi-main {
+                    padding: clamp(2px, calc(2px + .8vw), 15px);
+                }
+                html.fi.dark {--_is-dark:true}
+                .mi-clase-personalizada {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(min(calc(50% - 3px), calc(120px + 10vw)), 1fr));
+
+                    /* Nueva propiedad if() en CSS, solo acpeta style pero mas adelante soportara selector directamente las clases con :has()*/
+                    background-color: if(
+                        style(--_is-dark: true): #ff000059;
+                        else: #7f00ff5c
+                    );
+
+                    gap: clamp(2px, calc(2px + .8vw), 15px);
+                    padding: clamp(2px, calc(2px + .8vw), 15px);
+                    border-radius: clamp(2px, calc(2px + .8vw), 15px);
+                }
+            </style>',
+            scopes: [\App\Filament\Resources\AccountStatusResource::class]
+        );
     }
 
     private function getCustomNavigationItems(): array

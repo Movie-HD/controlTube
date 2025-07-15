@@ -33,6 +33,7 @@ class AccountStatusResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
+            ->extraAttributes(['class' => 'mi-clase-personalizada'])
             ->components([
                 TextInput::make('name')->required(),
                 Textarea::make('description'),
