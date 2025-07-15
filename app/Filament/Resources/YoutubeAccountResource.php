@@ -40,8 +40,8 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Repeater;
 use Carbon\Carbon;
-use HusamTariq\FilamentTimePicker\Forms\Components\TimePickerField;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
+
 
 class YoutubeAccountResource extends Resource
 {
@@ -244,14 +244,10 @@ class YoutubeAccountResource extends Resource
                     Repeater::make('activity_times')
                         ->hiddenLabel()
                         ->schema([
-                            TimePickerField::make('start_time')
-                                ->label('Hora de Inicio')
-                                ->okLabel("Confirm")
-                                ->cancelLabel("Cancel"),
-                            TimePickerField::make('end_time')
-                                ->label('Hora de Fin')
-                                ->okLabel("Confirm")
-                                ->cancelLabel("Cancel"),
+                            TimePicker::make('start_time')
+                                ->label('Hora de Inicio'),
+                            TimePicker::make('end_time')
+                                ->label('Hora de Fin'),
                         ])
                         ->columns(2)
                         ->defaultItems(1) // Opcional: muestra un bloque vacío al crear

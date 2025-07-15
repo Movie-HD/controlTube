@@ -1,15 +1,15 @@
-<div class="space-y-6">
+<div class="row-gap">
 <x-filament::section>
-    <x-filament-panels::form wire:submit="scrape">
+    <form wire:submit="scrape">
         {{ $this->form }}
 
-        <x-filament::button type="submit">
+        <x-filament::button type="submit" style="margin-top: 10px">
             Extraer Datos
         </x-filament::button>
-    </x-filament-panels::form>
+    </form>
 </x-filament::section>
 
-<div class="mt-8 space-y-6">
+<div class="mt-8 row-gap">
     <x-filament::section>
         <x-slot name="heading">Título</x-slot>
         <p onclick="copy(this)">{{ $xtitulo }}</p>
@@ -209,7 +209,7 @@
     @if ($selectedTmdbMovie && !empty($tmdbBackdrops))
         <x-filament::section>
             <x-slot name="heading">Fondos de {{ $selectedTmdbMovie['title'] }}</x-slot>
-            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(min(calc(50% - 3px), calc(120px + 10vw)), 1fr)); gap: 6px;">
+            <div class="grid" style="display:grid;grid-template-columns: repeat(auto-fit, minmax(min(calc(50% - 3px), calc(120px + 10vw)), 1fr)); gap: 6px;">
                 @foreach ($tmdbBackdrops as $backdrop)
                     <div class="bg-gray-800 rounded overflow-hidden flex items-center justify-center">
                         <img src="https://image.tmdb.org/t/p/w500{{ $backdrop['file_path'] }}" alt="Backdrop" class="w-full h-40 object-cover">
@@ -252,6 +252,7 @@
         p{margin:8px 0;box-shadow:0 1px 4px 0 #000;border-left:2px dashed #f50400;padding:10px;cursor:pointer}p:hover{background:#341750}
         #emoji{display:inline-block}
         .grande button{font-size:16px}
+        .row-gap{display:grid;row-gap:1rem}
     </style>
     <script>
         function copy(that){
