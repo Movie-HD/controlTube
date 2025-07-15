@@ -41,6 +41,7 @@ use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Repeater;
 use Carbon\Carbon;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
+use Filament\Forms\Components\Repeater\TableColumn;
 
 
 class YoutubeAccountResource extends Resource
@@ -242,12 +243,21 @@ class YoutubeAccountResource extends Resource
                 ])
                 ->schema([
                     Repeater::make('activity_times')
+                        ->table([
+                            TableColumn::make('Hora de Inicio'),
+                            TableColumn::make('Hora de Fin'),
+                        ])
                         ->hiddenLabel()
+                        ->reorderable(false)
                         ->schema([
                             TimePicker::make('start_time')
-                                ->label('Hora de Inicio'),
+                                ->label('Hora de Inicio')
+                                ->seconds(false)
+                                ->format('h:i A'),
                             TimePicker::make('end_time')
-                                ->label('Hora de Fin'),
+                                ->label('Hora de Fin')
+                                ->seconds(false)
+                                ->format('h:i A'),
                         ])
                         ->columns(2)
                         ->defaultItems(1) // Opcional: muestra un bloque vacío al crear
