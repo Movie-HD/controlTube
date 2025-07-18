@@ -33,7 +33,7 @@ class ServerMovieResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            \App\Filament\Resources\ServerMovies\RelationManagers\MovieLinkHistoriesRelationManager::class,
         ];
     }
 
