@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('server_movies', function (Blueprint $table) {
             $table->id();
             $table->string('movie_name');
-            $table->string('tmdb_id');
-            $table->text('movie_link');
+            $table->string('tmdb_id')->nullable();
+            $table->text('movie_link')->nullable();
             $table->text('description')->nullable();
             $table->json('screenshots')->nullable();
 
-            $table->foreignId('host_server_id')->constrained()->nullOnDelete(); # relación al host_server para llamarlo a traves del select
+            $table->foreignId('host_server_id')->nullable()->constrained()->nullOnDelete(); # relación al host_server para llamarlo a traves del select
 
             $table->timestamps();
         });
