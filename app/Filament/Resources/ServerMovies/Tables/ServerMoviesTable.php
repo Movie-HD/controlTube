@@ -26,15 +26,18 @@ class ServerMoviesTable
                     ->badge()
                     ->limitList(3) // Opcional: limita la cantidad visible
                     ->listWithLineBreaks(false) // true para hacerlos verticales
-                    ->color('gray') // color base
+                    ->color(fn ($state): ?string => $state['color'] ?? 'gray')
                     ->getStateUsing(function ($record) {
                         return $record->associatedWeb
-                            ->pluck('get_domain')
-                            ->unique()
-                            ->filter()
+                            ->map(fn ($web) => [
+                                'label' => $web->get_domain,
+                                'color' => $web->badge_color ?? 'gray',
+                            ])
+                            ->unique('label') // evita repetir el mismo dominio
                             ->values()
                             ->toArray();
-                    }),
+                    })
+                    ->formatStateUsing(fn ($state) => $state['label'] ?? '-'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

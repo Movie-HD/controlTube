@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('link')->nullable();
             $table->string('get_domain')->nullable();
             $table->boolean('was_updated')->default(true);
+            $table->string('badge_color')->nullable();
             $table->text('description')->nullable();
             $table->json('screenshots')->nullable();
             $table->timestamps();

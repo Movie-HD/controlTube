@@ -21,6 +21,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Forms\Components\Hidden;
 use Filament\Tables\Grouping\Group;
+use Filament\Forms\Components\Select;
 
 class AssociatedWebRelationManager extends RelationManager
 {
@@ -47,6 +48,16 @@ class AssociatedWebRelationManager extends RelationManager
                     ->default(true),
                 Hidden::make('get_domain')
                     ->dehydrated(true),
+                Select::make('badge_color')
+                    ->label('Color del dominio')
+                    ->options([
+                        'success' => 'Verde',
+                        'danger' => 'Rojo',
+                        'gray' => 'Gris',
+                        'info' => 'Azul',
+                        'warning' => 'Amarillo',
+                    ])
+                    ->default('gray'),
             ]);
     }
 

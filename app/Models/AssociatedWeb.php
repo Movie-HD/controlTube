@@ -13,6 +13,7 @@ class AssociatedWeb extends Model
         'was_updated',
         'description',
         'screenshots',
+        'badge_color',
     ];
 
     protected $casts = [
