@@ -28,4 +28,9 @@ class ServerMovie extends Model
     {
         return $this->hasMany(MovieLinkHistory::class);
     }
+
+    public function associatedWeb()
+    {
+        return $this->hasMany(AssociatedWeb::class);
+    }
 }
