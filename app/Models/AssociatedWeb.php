@@ -9,6 +9,7 @@ class AssociatedWeb extends Model
     protected $fillable = [
         'server_movie_id',
         'link',
+        'get_domain',
         'was_updated',
         'description',
         'screenshots',

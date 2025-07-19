@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('server_movie_id')->constrained()->onDelete('cascade');
             $table->string('link')->nullable();
+            $table->string('get_domain')->nullable();
             $table->boolean('was_updated')->default(true);
             $table->text('description')->nullable();
             $table->json('screenshots')->nullable();

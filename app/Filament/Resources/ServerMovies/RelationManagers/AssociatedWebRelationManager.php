@@ -19,6 +19,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Forms\Components\Hidden;
+use Filament\Tables\Grouping\Group;
 
 class AssociatedWebRelationManager extends RelationManager
 {
@@ -29,9 +31,22 @@ class AssociatedWebRelationManager extends RelationManager
         return $schema
             ->components([
                 TextInput::make('link')
-                    ->required(),
+                    ->required()
+                    ->reactive()
+                    ->afterStateUpdated(function (callable $set, ?string $state) {
+                        $domain = null;
+
+                        if (filter_var($state, FILTER_VALIDATE_URL)) {
+                            $parsedUrl = parse_url($state);
+                            $domain = $parsedUrl['host'] ?? null;
+                        }
+
+                        $set('get_domain', $domain);
+                    }),
                 Toggle::make('was_updated')
                     ->default(true),
+                Hidden::make('get_domain')
+                    ->dehydrated(true),
             ]);
     }
 
@@ -52,6 +67,18 @@ class AssociatedWebRelationManager extends RelationManager
                     ->searchable(),
                 ToggleColumn::make('was_updated'),
             ])
+            ->groups([
+                Group::make('get_domain')
+                    ->label('Dominio')
+                    ->collapsible()
+                    ->orderQueryUsing(fn ($query, $direction) =>
+                        $query
+                            ->orderBy('get_domain')
+                            ->orderBy('created_at', 'desc')
+                    ),
+            ])
+            ->defaultGroup('get_domain') # Aplica la agrupación por defecto
+            ->groupingSettingsHidden()  # Oculta opciones de configuración de agrupación
             ->filters([
                 //
             ])

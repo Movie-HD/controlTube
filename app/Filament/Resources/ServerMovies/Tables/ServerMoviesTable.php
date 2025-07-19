@@ -18,9 +18,23 @@ class ServerMoviesTable
                     ->searchable(),
                 TextColumn::make('tmdb_id')
                     ->searchable(),
-                TextColumn::make('host_server_id')
-                    ->numeric()
+                TextColumn::make('hostServer.name')
+                    ->badge()
                     ->sortable(),
+                TextColumn::make('associatedWeb.get_domain')
+                    ->label('Dominios')
+                    ->badge()
+                    ->limitList(3) // Opcional: limita la cantidad visible
+                    ->listWithLineBreaks(false) // true para hacerlos verticales
+                    ->color('gray') // color base
+                    ->getStateUsing(function ($record) {
+                        return $record->associatedWeb
+                            ->pluck('get_domain')
+                            ->unique()
+                            ->filter()
+                            ->values()
+                            ->toArray();
+                    }),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
