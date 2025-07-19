@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('host_servers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('link')->nullable();
             $table->text('description')->nullable();
             $table->json('screenshots')->nullable();
             $table->string('email')->nullable();

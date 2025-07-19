@@ -8,6 +8,7 @@ class HostServer extends Model
 {
     protected $fillable = [
         'name',
+        'link',
         'description',
         'screenshots',
         'email',
