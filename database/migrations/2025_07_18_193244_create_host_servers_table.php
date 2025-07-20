@@ -19,6 +19,7 @@ return new class extends Migration
             $table->json('screenshots')->nullable();
             $table->string('email')->nullable();
             $table->string('password')->nullable();
+            $table->string('badge_color')->nullable();
             $table->timestamps();
         });
     }

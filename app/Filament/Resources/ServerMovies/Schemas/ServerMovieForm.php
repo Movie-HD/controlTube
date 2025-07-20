@@ -40,6 +40,17 @@ class ServerMovieForm
                                 TextInput::make('name')
                                     ->label('Nombre')
                                     ->required(),
+                                Select::make('badge_color')
+                                    ->label('Color del badge')
+                                    ->options([
+                                        'success' => 'Verde',
+                                        'danger' => 'Rojo',
+                                        'gray' => 'Gris',
+                                        'info' => 'Azul',
+                                        'warning' => 'Amarillo',
+                                    ])
+                                    ->default('gray')
+                                    ->native(false),
                                 TextInput::make('description')
                                     ->label('Descripción'),
                                 TextInput::make('email')
@@ -80,6 +91,17 @@ class ServerMovieForm
                         TextInput::make('name')
                             ->label('Nombre')
                             ->required(),
+                        Select::make('badge_color')
+                            ->label('Color del badge')
+                            ->options([
+                                'success' => 'Verde',
+                                'danger' => 'Rojo',
+                                'gray' => 'Gris',
+                                'info' => 'Azul',
+                                'warning' => 'Amarillo',
+                            ])
+                            ->default('gray')
+                            ->native(false),
                         TextInput::make('description')
                             ->label('Descripción'),
                         TextInput::make('email')

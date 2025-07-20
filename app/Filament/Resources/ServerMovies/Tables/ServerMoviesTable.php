@@ -20,7 +20,8 @@ class ServerMoviesTable
                     ->searchable(),
                 TextColumn::make('hostServer.name')
                     ->badge()
-                    ->sortable(),
+                    ->sortable()
+                    ->color(fn ($record) => $record->hostServer?->badge_color ?? 'gray'),
                 TextColumn::make('associatedWeb.get_domain')
                     ->label('Dominios')
                     ->badge()

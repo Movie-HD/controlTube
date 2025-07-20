@@ -13,6 +13,7 @@ class HostServer extends Model
         'screenshots',
         'email',
         'password',
+        'badge_color',
     ];
 
     protected $casts = [
