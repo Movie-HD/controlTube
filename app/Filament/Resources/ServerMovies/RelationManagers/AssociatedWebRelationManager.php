@@ -22,10 +22,13 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Forms\Components\Hidden;
 use Filament\Tables\Grouping\Group;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
+use Illuminate\Database\Eloquent\Builder;
 
 class AssociatedWebRelationManager extends RelationManager
 {
-    protected static string $relationship = 'associatedWeb';
+    protected static string $relationship = 'associatedWebs';
 
     public function form(Schema $schema): Schema
     {
@@ -44,8 +47,6 @@ class AssociatedWebRelationManager extends RelationManager
 
                         $set('get_domain', $domain);
                     }),
-                Toggle::make('was_updated')
-                    ->default(true),
                 Hidden::make('get_domain')
                     ->dehydrated(true),
                 Select::make('badge_color')
@@ -58,6 +59,35 @@ class AssociatedWebRelationManager extends RelationManager
                         'warning' => 'Amarillo',
                     ])
                     ->default('gray'),
+
+                // Repeater de relación con movie_links
+                Repeater::make('movieLinkDetails')
+                    ->hiddenLabel()
+                    ->relationship() // <- ahora sí es un hasMany real
+                    ->table([
+                        TableColumn::make('Host'),
+                        TableColumn::make('¿Fue actualizado?'),
+                    ])
+                    ->extraAttributes(['class' => 'mi-clase-td'])
+                    ->schema([
+                        Select::make('movie_link_id')
+                            ->label('Enlace de película')
+                            ->relationship(
+                                name: 'movieLink',
+                                titleAttribute: 'movie_link',
+                                # 3. Filtramos los MovieLink para que su server_movie_id coincida con el ID del ServerMovie padre
+                                modifyQueryUsing: fn (Builder $query) => $query->where('server_movie_id', $this->getOwnerRecord()->id)
+                            )
+                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->native(false)
+                            ->required(),
+                        Toggle::make('was_updated')
+                            ->label('¿Fue actualizado?')
+                            ->default(true),
+                    ])
+                    ->addActionLabel('Nuevo enlace')
+                    ->reorderable(false)
+                    ->columnSpanFull()
             ]);
     }
 
@@ -76,7 +106,6 @@ class AssociatedWebRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('link')
                     ->searchable(),
-                ToggleColumn::make('was_updated'),
             ])
             ->groups([
                 Group::make('get_domain')

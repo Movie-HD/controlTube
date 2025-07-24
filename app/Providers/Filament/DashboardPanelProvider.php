@@ -104,6 +104,31 @@ class DashboardPanelProvider extends PanelProvider
             </style>',
             scopes: [\App\Filament\Resources\AccountStatusResource::class]
         );
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::PAGE_START, # Puedes usar otros hooks según dónde quieres el CSS
+            fn (): string => '<style>
+                main.fi-main {
+                    padding: clamp(2px, calc(2px + .8vw), 15px);
+                }
+                html.fi.dark {--_is-dark:true}
+                .mi-clase-personalizada td{
+                    align-content: end;
+                }
+                .mi-clase-td td:nth-child(2) .fi-fo-field-label-ctn{
+                    justify-content: center;
+                }
+                .fi-dropdown-list-item:not(.fi-disabled):not([disabled]) {
+                    cursor: pointer;
+                }
+                .fi-disabled {
+                    opacity: 0.3;
+                }
+            </style>',
+            scopes: [
+                \App\Filament\Resources\ServerMovies\ServerMovieResource::class,
+                \App\Filament\Resources\ServerMovies\RelationManagers\AssociatedWebRelationManager::class,
+            ]
+        );
     }
 
     private function getCustomNavigationItems(): array

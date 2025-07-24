@@ -18,22 +18,36 @@ class ServerMoviesTable
                     ->searchable(),
                 TextColumn::make('tmdb_id')
                     ->searchable(),
-                TextColumn::make('hostServer.name')
+                TextColumn::make('movieLinks.hostServer.name')
+                    ->label('Servidores')
                     ->badge()
                     ->sortable()
-                    ->color(fn ($record) => $record->hostServer?->badge_color ?? 'gray'),
-                TextColumn::make('associatedWeb.get_domain')
+                    ->limitList(3)
+                    ->listWithLineBreaks(false)
+                    ->color(fn ($state): ?string => $state['color'] ?? 'gray')
+                    ->getStateUsing(function ($record) {
+                        return $record->movieLinks
+                            ->map(fn ($link) => [
+                                'label' => $link->hostServer->name ?? 'Desconocido',
+                                'color' => $link->hostServer->badge_color ?? 'gray',
+                            ])
+                            ->unique('label')
+                            ->values()
+                            ->toArray();
+                    })
+                    ->formatStateUsing(fn ($state) => $state['label'] ?? '-'),
+                TextColumn::make('associatedWebs.get_domain')
                     ->label('Dominios')
                     ->badge()
                     ->limitList(3) // Opcional: limita la cantidad visible
                     ->listWithLineBreaks(false) // true para hacerlos verticales
                     ->color(fn ($state): ?string => $state['color'] ?? 'gray')
                     ->getStateUsing(function ($record) {
-                        return $record->associatedWeb
-                            ->map(fn ($web) => [
+                        return $record->associatedWebs
+                            ->flatMap(fn ($web) => $web->movieLinks->map(fn ($link) => [
                                 'label' => $web->get_domain,
                                 'color' => $web->badge_color ?? 'gray',
-                            ])
+                            ]))
                             ->unique('label') // evita repetir el mismo dominio
                             ->values()
                             ->toArray();
