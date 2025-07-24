@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('host_servers', function (Blueprint $table) {
+        Schema::create('associated_web_movie_link', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->json('screenshots')->nullable();
-            $table->string('email')->nullable();
-            $table->string('password')->nullable();
-            $table->string('badge_color')->nullable();
+            $table->foreignId('associated_web_id')->constrained()->onDelete('cascade');
+            $table->foreignId('movie_link_id')->constrained()->onDelete('cascade');
+            $table->boolean('was_updated')->default(true);
             $table->timestamps();
         });
     }
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('host_servers');
+        Schema::dropIfExists('associated_web_movie_link');
     }
 };

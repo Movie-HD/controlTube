@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('movie_link_histories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('server_movie_id')->constrained()->onDelete('cascade');
+            $table->foreignId('movie_link_id')->constrained()->onDelete('cascade');
             $table->text('old_link');
             $table->timestamps();
         });

@@ -9,28 +9,22 @@ class ServerMovie extends Model
     protected $fillable = [
         'movie_name',
         'tmdb_id',
-        'movie_link',
         'description',
         'screenshots',
-        'host_server_id',
     ];
 
     protected $casts = [
         'screenshots' => 'array',
     ];
 
-    public function hostServer()
+    public function movieLinks()
     {
-        return $this->belongsTo(HostServer::class);
+        return $this->hasMany(MovieLink::class);
     }
 
-    public function movieLinkHistories()
-    {
-        return $this->hasMany(MovieLinkHistory::class);
-    }
-
-    public function associatedWeb()
+    public function associatedWebs()
     {
         return $this->hasMany(AssociatedWeb::class);
     }
+
 }

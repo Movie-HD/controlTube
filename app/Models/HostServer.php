@@ -8,7 +8,6 @@ class HostServer extends Model
 {
     protected $fillable = [
         'name',
-        'link',
         'description',
         'screenshots',
         'email',
@@ -20,8 +19,8 @@ class HostServer extends Model
         'screenshots' => 'array',
     ];
 
-    public function serverMovies()
+    public function movieLinks()
     {
-        return $this->hasMany(ServerMovie::class);
+        return $this->hasMany(MovieLink::class);
     }
 }
