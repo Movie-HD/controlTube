@@ -35,6 +35,11 @@ class ServerMovieResource extends Resource
         return [
             \App\Filament\Resources\ServerMovies\RelationManagers\AssociatedWebRelationManager::class,
             \App\Filament\Resources\ServerMovies\RelationManagers\MovieLinkHistoriesRelationManager::class,
+            # Si usamos RelationGroup se desactivan los tabs.
+            #\Filament\Resources\RelationManagers\RelationGroup::make('Sección de Relaciones', [
+                #\App\Filament\Resources\ServerMovies\RelationManagers\AssociatedWebRelationManager::class,
+                #\App\Filament\Resources\ServerMovies\RelationManagers\MovieLinkHistoriesRelationManager::class,
+            #]),
         ];
     }
 
