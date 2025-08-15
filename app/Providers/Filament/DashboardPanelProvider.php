@@ -38,7 +38,27 @@ class DashboardPanelProvider extends PanelProvider
             ->path('dashboard')
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn () => Blade::render('<style>.mdtp__wrapper { top: calc(50% - 212px); }</style>')
+                fn () => Blade::render('
+                <style>
+                .mdtp__wrapper{top:calc(50% - 212px);}
+                html.fi.dark {--_is-dark:true}
+                .fi-fo-repeater.mi-clase-personalizada {
+                    counter-reset: contador;
+                    & .fi-fo-repeater-item-header:before {
+                        counter-increment: contador;
+                        content: "Bloque " counter(contador);
+                    }
+                    & button.fi-link.fi-size-sm.fi-ac-link-action {
+                        background-color: if(
+                            style(--_is-dark: true): #343434;
+                            else: #dfdfdf;
+                        );
+                        padding: 1px 4px;
+                        border-radius: 4px;
+                        box-shadow: 0 0 3px 0 #c4c4c48f;
+                    }
+                }
+                </style>')
                 )
             ->login()
             ->registration()
