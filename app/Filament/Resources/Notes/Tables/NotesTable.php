@@ -24,6 +24,7 @@ class NotesTable
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('description')
+                    ->html()
                     ->searchable(),
                 TextColumn::make('tag')
                     ->searchable(),

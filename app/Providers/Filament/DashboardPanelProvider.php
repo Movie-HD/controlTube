@@ -44,9 +44,29 @@ class DashboardPanelProvider extends PanelProvider
                 html.fi.dark {--_is-dark:true}
                 .fi-fo-repeater.mi-clase-personalizada {
                     counter-reset: contador;
-                    & .fi-fo-repeater-item-header:before {
+                    & .fi-section-header-heading{
+                        font-size:13px;
+                    }
+                    & .fi-fo-repeater-item-content{
+                        padding:0;
+                        & .TextEntry{
+                            padding: 5px;
+                            position: absolute;
+                            margin-top: -40px;
+                            width: auto;
+                        }
+                        & .fi-sc.fi-sc-has-gap.fi-grid{
+                            gap:0;
+                        }
+                        & .fi-sc-has-gap.fi-section-content{
+                            gap:0;
+                            padding: 10px;
+                        }
+                    }
+                    & .fi-fo-repeater-item-header:after {
                         counter-increment: contador;
                         content: "Bloque " counter(contador);
+                        font-size:13px;
                     }
                     & button.fi-link.fi-size-sm.fi-ac-link-action {
                         background-color: if(
