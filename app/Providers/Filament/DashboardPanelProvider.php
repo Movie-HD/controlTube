@@ -44,8 +44,15 @@ class DashboardPanelProvider extends PanelProvider
                 html.fi.dark {--_is-dark:true}
                 .fi-fo-repeater.mi-clase-personalizada {
                     counter-reset: contador;
+                    & .fi-section-header{
+                        padding:6px;
+                    }
                     & .fi-section-header-heading{
                         font-size:13px;
+                        color: if(
+                            style(--_is-dark: true): #990;
+                            else: #aaa;
+                        );
                     }
                     & .fi-fo-repeater-item-content{
                         padding:0;
@@ -53,7 +60,7 @@ class DashboardPanelProvider extends PanelProvider
                             padding: 5px;
                             position: absolute;
                             margin-top: -40px;
-                            width: auto;
+                            width: calc(100% - 190px);
                         }
                         & .fi-sc.fi-sc-has-gap.fi-grid{
                             gap:0;

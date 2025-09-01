@@ -48,7 +48,9 @@ class NoteForm
                             ->schema([
                                 FusedGroup::make([
                                     TextInput::make('name')
-                                        ->placeholder('Nombre'),
+                                        ->placeholder('Nombre')
+                                        ->reactive()
+                                        ->debounce(500),
                                     RichEditor::make('description')
                                         ->json()
                                         ->placeholder('Descripción'),
