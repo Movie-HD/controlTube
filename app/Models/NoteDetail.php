@@ -11,6 +11,7 @@ class NoteDetail extends Model
         'name',
         'description',
         'content',
+        'color',
         'screenshot',
     ];
 
