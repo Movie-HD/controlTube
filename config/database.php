@@ -112,6 +112,35 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+
+        'wordpress' => [
+            'driver' => 'mysql',
+            'host' => env('WP_DB_HOST', '82.25.95.176'),
+            'port' => env('WP_DB_PORT', '4040'),
+            'database' => env('WP_DB_DATABASE', 'principal'),
+            'username' => env('WP_DB_USERNAME', 'cristian'),
+            'password' => env('WP_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => 'wply_',
+            'strict' => false,
+            'engine' => null,
+        ],
+
+        'onlipeli' => [
+            'driver' => 'mysql',
+            'host' => env('ONLIPELI_DB_HOST', '82.25.95.176'),
+            'port' => env('ONLIPELI_DB_PORT', '3030'),
+            'database' => env('ONLIPELI_DB_DATABASE', 'app'),
+            'username' => env('ONLIPELI_DB_USERNAME', 'mariadb'),
+            'password' => env('ONLIPELI_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => 'wp_',
+            'strict' => false,
+            'engine' => null,
+        ],
+
     ],
 
     /*
@@ -147,7 +176,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
