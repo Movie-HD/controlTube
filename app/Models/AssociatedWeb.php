@@ -13,6 +13,8 @@ class AssociatedWeb extends Model
         'screenshots',
         'badge_color',
         'server_movie_id',
+        'wp_edit_completed',
+        'wp_edit_url',
     ];
 
     protected $casts = [
@@ -27,13 +29,13 @@ class AssociatedWeb extends Model
     public function movieLinks()
     {
         return $this->belongsToMany(MovieLink::class)
-                    ->withPivot('was_updated')
-                    ->withTimestamps();
+            ->withPivot('was_updated')
+            ->withTimestamps();
     }
 
     public function movieLinkDetails()
-{
-    return $this->hasMany(AssociatedWebMovieLink::class);
-}
+    {
+        return $this->hasMany(AssociatedWebMovieLink::class);
+    }
 
 }

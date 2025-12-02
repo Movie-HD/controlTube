@@ -114,7 +114,7 @@ class WordPressImdbService
 
         return WordPressPost::on($connection)
             ->where('post_name', $postName)
-            ->where('post_status', 'publish')
+            ->whereIn('post_status', ['publish', 'draft'])
             ->with('meta')
             ->first();
     }
@@ -148,6 +148,12 @@ class WordPressImdbService
                 ->first();
 
             if ($meta) {
+                // Verificar si el valor ya es el correcto
+                if ($meta->meta_value === $urlFilm) {
+                    \Log::info("Meta value already correct", ['meta_id' => $meta->meta_id]);
+                    return true; // Ya está correcto, no necesita actualización
+                }
+
                 // Actualizar existente
                 \Log::info("Updating existing meta", ['meta_id' => $meta->meta_id]);
                 $result = DB::connection($connection)
