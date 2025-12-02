@@ -433,34 +433,61 @@ class AssociatedWebRelationManager extends RelationManager
                             \Filament\Schemas\Components\Section::make('Contenido Común')
                                 ->description('Estos campos se aplicarán a ambos sitios')
                                 ->schema([
-                                    Textarea::make('post_content')
-                                        ->label('Contenido')
+                                    Textarea::make('synopsis')
+                                        ->label('Sinopsis')
                                         ->rows(5)
-                                        ->default($formattedData['post_content'])
+                                        ->default($movieData['overview'] ?? $formattedData['post_content'])
+                                        ->helperText('Se guardará en post_content y como meta "overview"')
                                         ->columnSpanFull(),
-
-                                    Textarea::make('post_excerpt')
-                                        ->label('Extracto')
-                                        ->rows(2)
-                                        ->default($formattedData['post_excerpt'])
-                                        ->columnSpanFull(),
-
-                                    Select::make('post_status')
-                                        ->label('Estado')
-                                        ->options([
-                                            'publish' => 'Publicado',
-                                            'draft' => 'Borrador',
-                                        ])
-                                        ->default('draft'),
 
                                     TextInput::make('release_year')
                                         ->label('Año')
-                                        ->default($formattedData['meta']['release_date']),
+                                        ->default($formattedData['meta']['release_date'])
+                                        ->helperText('Se guardará como "release_date" en ambos sitios y "Released" en OnliPeli'),
 
-                                    TextInput::make('genres')
-                                        ->label('Géneros')
-                                        ->default($formattedData['meta']['genres'])
+                                    TextInput::make('runtime')
+                                        ->label('Duración (Runtime)')
+                                        ->default($formattedData['meta']['Runtime'] ?? '')
+                                        ->helperText('Duración de la película'),
+
+                                    TextInput::make('vote_average')
+                                        ->label('Calificación Promedio (IMDB Rating)')
+                                        ->default($movieData['vote_average'] ?? '')
+                                        ->helperText('Se guarda como "imdbRating" en OnliPeli y "vote_average" en ClubPeli'),
+
+                                    TextInput::make('vote_count')
+                                        ->label('Cantidad de Votos (IMDB Votes)')
+                                        ->default($movieData['vote_count'] ?? '')
+                                        ->helperText('Se guarda como "imdbVotes" en OnliPeli y "vote_count" en ClubPeli'),
+
+                                    TextInput::make('backdrops')
+                                        ->label('Fondo Player (URL)')
+                                        ->helperText('Una URL por línea. Se guardará como "fondo_player" en OnliPeli y "backdrop_film" en ClubPeli')
                                         ->columnSpanFull(),
+
+                                    TextInput::make('trailer_youtube_id')
+                                        ->label('Trailer YouTube ID')
+                                        ->helperText('Solo el ID del video (ej: dQw4w9WgXcQ). Se guardará como "youtube_id" en OnliPeli y "trailers" en ClubPeli'),
+
+                                    Select::make('font_typography')
+                                        ->label('Tipografía/Font')
+                                        ->options([
+                                            'inherit' => 'DEFECT',
+                                            'RINGM' => 'ACCION (RINGM)',
+                                            'BlankaRegular' => 'TERROR (BlankaRegular)',
+                                            'calendarnote' => 'ANIME (calendarnote)',
+                                            'square77' => 'AMOR (square77)',
+                                            'CaramelMocacino' => 'COMEDIA (CaramelMocacino)',
+                                            'CARBON-DROID' => 'FAMILIA (CARBON-DROID)',
+                                            'LOVEPbo' => 'AVENTURA (LOVEPbo)',
+                                            'Lovelo2LineBold' => 'COMIC (Lovelo2LineBold)',
+                                            'ValleniaLove' => 'ROMANCE (ValleniaLove)',
+                                            'Vallenia' => 'FICCION (Vallenia)',
+                                            'Fontrust' => 'ELEGANT (Fontrust)',
+                                            'AwakeTheBeauty' => 'ESTILO (AwakeTheBeauty)',
+                                        ])
+                                        ->default('inherit')
+                                        ->helperText('Se guardará como "mainmovie" en OnliPeli y "font" en ClubPeli'),
                                 ])
                                 ->columns(2)
                                 ->collapsible(),
@@ -469,16 +496,6 @@ class AssociatedWebRelationManager extends RelationManager
                             \Filament\Schemas\Components\Section::make('Información IMDB (Solo OnliPeli)')
                                 ->description('Estos campos se aplicarán solo a OnliPeli.net')
                                 ->schema([
-                                    TextInput::make('imdbRating')
-                                        ->label('IMDB Rating')
-                                        ->default($formattedData['meta']['imdbRating'])
-                                        ->helperText('Calificación de IMDB'),
-
-                                    TextInput::make('imdbVotes')
-                                        ->label('IMDB Votes')
-                                        ->default($formattedData['meta']['imdbVotes'])
-                                        ->helperText('Número de votos'),
-
                                     TextInput::make('original_title')
                                         ->label('Original Title')
                                         ->default($formattedData['meta']['Title'])
@@ -489,14 +506,7 @@ class AssociatedWebRelationManager extends RelationManager
                                         ->default($formattedData['meta']['Rated'])
                                         ->helperText('Clasificación (ej: PG-13, R)'),
 
-                                    TextInput::make('released')
-                                        ->label('Release Date')
-                                        ->default($formattedData['meta']['Released']),
 
-                                    TextInput::make('runtime')
-                                        ->label('Runtime')
-                                        ->default($formattedData['meta']['Runtime'])
-                                        ->helperText('Duración de la película'),
 
                                     TextInput::make('awards')
                                         ->label('Awards')
@@ -505,8 +515,7 @@ class AssociatedWebRelationManager extends RelationManager
 
                                     TextInput::make('country')
                                         ->label('Country')
-                                        ->default($formattedData['meta']['Country'])
-                                        ->columnSpanFull(),
+                                        ->default($formattedData['meta']['Country']),
                                 ])
                                 ->columns(2)
                                 ->collapsible()
@@ -546,9 +555,9 @@ class AssociatedWebRelationManager extends RelationManager
                             $postData = [
                                 'post_title' => $data["{$key}_title"],
                                 'post_name' => $data["{$key}_slug"],
-                                'post_content' => $data['post_content'] ?? '',
-                                'post_excerpt' => $data['post_excerpt'] ?? '',
-                                'post_status' => $data['post_status'],
+                                'post_content' => $data['synopsis'] ?? '',
+                                'post_excerpt' => '',
+                                'post_status' => 'draft',
                                 'post_type' => 'post',
                                 'post_author' => 1,
                                 'post_date' => now(),
@@ -562,18 +571,67 @@ class AssociatedWebRelationManager extends RelationManager
                             // Agregar metadata base
                             $metaInserts = [
                                 ['post_id' => $postId, 'meta_key' => $config['tmdb_field'], 'meta_value' => $serverMovie->tmdb_id],
-                                ['post_id' => $postId, 'meta_key' => 'release_date', 'meta_value' => $data['release_year'] ?? ''],
-                                ['post_id' => $postId, 'meta_key' => 'genres', 'meta_value' => $data['genres'] ?? ''],
                             ];
 
-                            // Agregar campos IMDB solo para OnliPeli
+                            // Campos comunes con nombres específicos por sitio
+                            $commonFields = [];
+
+                            // Overview/Sinopsis (también se guarda como meta)
+                            if (!empty($data['synopsis'])) {
+                                $commonFields[] = ['post_id' => $postId, 'meta_key' => 'overview', 'meta_value' => $data['synopsis']];
+                            }
+
+                            // Release Year/Date - nombres diferentes por sitio
+                            if (!empty($data['release_year'])) {
+                                $commonFields[] = ['post_id' => $postId, 'meta_key' => 'release_date', 'meta_value' => $data['release_year']];
+                                // OnliPeli también usa "Released"
+                                if ($key === 'onlipeli') {
+                                    $commonFields[] = ['post_id' => $postId, 'meta_key' => 'Released', 'meta_value' => $data['release_year']];
+                                }
+                            }
+
+                            // Runtime
+                            if (!empty($data['runtime'])) {
+                                $commonFields[] = ['post_id' => $postId, 'meta_key' => 'runtime', 'meta_value' => $data['runtime']];
+                            }
+
+                            // Vote Average y Vote Count - nombres diferentes por sitio
+                            if (!empty($data['vote_average'])) {
+                                $voteAvgKey = $key === 'onlipeli' ? 'imdbRating' : 'vote_average';
+                                $commonFields[] = ['post_id' => $postId, 'meta_key' => $voteAvgKey, 'meta_value' => $data['vote_average']];
+                            }
+
+                            if (!empty($data['vote_count'])) {
+                                $voteCountKey = $key === 'onlipeli' ? 'imdbVotes' : 'vote_count';
+                                $commonFields[] = ['post_id' => $postId, 'meta_key' => $voteCountKey, 'meta_value' => $data['vote_count']];
+                            }
+
+                            // Backdrops - nombres diferentes por sitio
+                            if (!empty($data['backdrops'])) {
+                                $backdropKey = $key === 'onlipeli' ? 'fondo_player' : 'backdrop_film';
+                                $commonFields[] = ['post_id' => $postId, 'meta_key' => $backdropKey, 'meta_value' => $data['backdrops']];
+                            }
+
+                            // Trailer YouTube ID - nombres diferentes por sitio
+                            if (!empty($data['trailer_youtube_id'])) {
+                                $trailerKey = $key === 'onlipeli' ? 'youtube_id' : 'trailers';
+                                $commonFields[] = ['post_id' => $postId, 'meta_key' => $trailerKey, 'meta_value' => $data['trailer_youtube_id']];
+                            }
+
+                            // Font/Typography - nombres diferentes por sitio
+                            if (!empty($data['font_typography'])) {
+                                $fontKey = $key === 'onlipeli' ? 'mainmovie' : 'font';
+                                $commonFields[] = ['post_id' => $postId, 'meta_key' => $fontKey, 'meta_value' => $data['font_typography']];
+                            }
+
+                            $metaInserts = array_merge($metaInserts, $commonFields);
+
+                            // Agregar campos IMDB adicionales solo para OnliPeli (sin imdbRating/imdbVotes que ya están arriba)
                             if ($key === 'onlipeli') {
                                 $imdbFields = [
-                                    ['post_id' => $postId, 'meta_key' => 'imdbRating', 'meta_value' => $data['imdbRating'] ?? ''],
-                                    ['post_id' => $postId, 'meta_key' => 'imdbVotes', 'meta_value' => $data['imdbVotes'] ?? ''],
                                     ['post_id' => $postId, 'meta_key' => 'Title', 'meta_value' => $data['original_title'] ?? ''],
                                     ['post_id' => $postId, 'meta_key' => 'Rated', 'meta_value' => $data['rated'] ?? ''],
-                                    ['post_id' => $postId, 'meta_key' => 'Released', 'meta_value' => $data['released'] ?? ''],
+
                                     ['post_id' => $postId, 'meta_key' => 'Runtime', 'meta_value' => $data['runtime'] ?? ''],
                                     ['post_id' => $postId, 'meta_key' => 'Awards', 'meta_value' => $data['awards'] ?? ''],
                                     ['post_id' => $postId, 'meta_key' => 'Country', 'meta_value' => $data['country'] ?? ''],
