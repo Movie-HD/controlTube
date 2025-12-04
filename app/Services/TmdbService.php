@@ -27,7 +27,8 @@ class TmdbService
                 $response = Http::get("{$this->baseUrl}/movie/{$tmdbId}", [
                     'api_key' => $this->apiKey,
                     'language' => 'es-ES',
-                    'append_to_response' => 'credits',
+                    'append_to_response' => 'credits,images',
+                    'include_image_language' => 'en,null', // Obtener imágenes en inglés y sin idioma
                 ]);
 
                 if ($response->successful()) {

@@ -28,9 +28,12 @@ use Filament\Forms\Components\Repeater\TableColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Notifications\Notification;
 use App\Services\WordPressImdbService;
+use App\Services\TmdbService;
 use App\Models\AssociatedWeb;
 use Filament\Schemas\Components\Flex;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\ViewField;
 
 class AssociatedWebRelationManager extends RelationManager
 {
@@ -120,6 +123,10 @@ class AssociatedWebRelationManager extends RelationManager
             ->recordTitleAttribute('link')
             ->columns([
                 TextColumn::make('link')
+                    ->searchable(),
+                TextColumn::make('movieLinkDetails.movieLink.movie_link')
+                    ->badge()
+                    ->color('gray')
                     ->searchable(),
                 ToggleColumn::make('wp_edit_completed')
                     ->label('¿Fue editado en WordPress?')
@@ -695,11 +702,11 @@ class AssociatedWebRelationManager extends RelationManager
 
                 // Botón para enviar todos los MovieLinks a WordPress
                 Action::make('updateAllToWordPress')
-                    ->label('Enviar Lote a WordPress')
+                    ->label('Enviar MovieLink en Lote')
                     ->icon('heroicon-o-arrow-up-tray')
                     ->color('warning')
                     ->requiresConfirmation()
-                    ->modalHeading('Enviar todos a WordPress')
+                    ->modalHeading('Enviar MovieLink en Lote a WordPress')
                     ->modalDescription('Se enviará el primer MovieLink de cada AssociatedWeb a WordPress.')
                     ->action(function () {
                         $serverMovie = $this->getOwnerRecord();
@@ -755,7 +762,320 @@ class AssociatedWebRelationManager extends RelationManager
                             ->body($message)
                             ->send();
                     }),
+
+                // Nueva acción para editar campos básicos con preview
+                Action::make('editBasicFields')
+                    ->label('Editar Posts WP')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('info')
+                    ->visible(fn() => $this->getOwnerRecord()->associatedWebs->isNotEmpty())
+                    ->modalWidth('7xl')
+                    ->fillForm(function () {
+                        $serverMovie = $this->getOwnerRecord();
+                        $tmdbService = app(TmdbService::class);
+
+                        // Obtener datos de TMDB
+                        $movieData = $tmdbService->getMovie($serverMovie->tmdb_id);
+                        $formData = [];
+
+                        // Para cada AssociatedWeb, cargar sus datos actuales
+                        foreach ($serverMovie->associatedWebs as $associatedWeb) {
+                            $domain = $this->getDomainFromLink($associatedWeb->link);
+                            $key = $domain === 'clubpeli.com' ? 'clubpeli' : 'onlipeli';
+
+                            \Log::info("Loading data for domain: {$domain}, key: {$key}");
+
+                            // Obtener post de WordPress
+                            $wpService = app(WordPressImdbService::class);
+                            $slug = str_replace(['https://clubpeli.com/', 'https://onlipeli.net/', 'https://www.onlipeli.net/'], '', $associatedWeb->link);
+                            $post = $wpService->findPostByPostName($slug, $domain);
+
+                            if ($post) {
+                                \Log::info("Post found for {$key}: {$post->post_title} (ID: {$post->ID})");
+
+                                // Log all meta keys for debugging
+                                $allMeta = $post->meta->pluck('meta_value', 'meta_key')->toArray();
+                                \Log::info("All meta keys for {$key}", ['meta_keys' => array_keys($allMeta)]);
+
+                                // Define meta keys for each site
+                                $metaKeys = [
+                                    'release_date' => 'release_date',
+                                    'runtime' => 'runtime',
+                                    'vote_average' => $key === 'onlipeli' ? 'imdbRating' : 'vote_average',
+                                    'vote_count' => $key === 'onlipeli' ? 'imdbVotes' : 'vote_count',
+                                    'backdrop' => $key === 'onlipeli' ? 'fondo_player' : 'backdrop_film',
+                                    'trailer' => $key === 'onlipeli' ? 'youtube_id' : 'trailers',
+                                    'font' => $key === 'onlipeli' ? 'mainmovie' : 'font',
+                                ];
+
+                                // Log WordPress values for each field
+                                $wpValues = [];
+                                foreach ($metaKeys as $fieldName => $metaKey) {
+                                    $wpValues[$fieldName] = [
+                                        'meta_key' => $metaKey,
+                                        'value' => $post->meta->where('meta_key', $metaKey)->first()?->meta_value ?? 'NOT FOUND'
+                                    ];
+                                }
+                                \Log::info("WordPress values for {$key}", $wpValues);
+
+                                // Cargar meta fields actuales, con fallback a TMDB si están vacíos
+                                $formData["{$key}_synopsis"] = $post->post_content ?: ($movieData['overview'] ?? '');
+
+                                // Release year - usar TMDB si está vacío
+                                $wpReleaseYear = $post->meta->where('meta_key', 'release_date')->first()?->meta_value ?? '';
+                                $formData["{$key}_release_year"] = $wpReleaseYear ?: (isset($movieData['release_date']) ? substr($movieData['release_date'], 0, 4) : '');
+
+                                // Runtime - usar TMDB si está vacío
+                                $wpRuntime = $post->meta->where('meta_key', 'runtime')->first()?->meta_value ?? '';
+                                if (!$wpRuntime && isset($movieData['runtime'])) {
+                                    $hours = floor($movieData['runtime'] / 60);
+                                    $minutes = $movieData['runtime'] % 60;
+                                    $wpRuntime = sprintf('%02d:%02d:00', $hours, $minutes);
+                                }
+                                $formData["{$key}_runtime"] = $wpRuntime;
+
+                                // Votes - usar TMDB si está vacío
+                                $voteAvgKey = $key === 'onlipeli' ? 'imdbRating' : 'vote_average';
+                                $voteCountKey = $key === 'onlipeli' ? 'imdbVotes' : 'vote_count';
+                                $wpVoteAvg = $post->meta->where('meta_key', $voteAvgKey)->first()?->meta_value ?? '';
+                                $wpVoteCount = $post->meta->where('meta_key', $voteCountKey)->first()?->meta_value ?? '';
+                                $formData["{$key}_vote_average"] = $wpVoteAvg ?: ($movieData['vote_average'] ?? '');
+                                $formData["{$key}_vote_count"] = $wpVoteCount ?: ($movieData['vote_count'] ?? '');
+
+                                // Backdrop - usar TMDB si está vacío
+                                $backdropKey = $key === 'onlipeli' ? 'fondo_player' : 'backdrop_film';
+                                $wpBackdrop = $post->meta->where('meta_key', $backdropKey)->first()?->meta_value ?? '';
+                                if (!$wpBackdrop && isset($movieData['backdrop_path'])) {
+                                    $wpBackdrop = "https://image.tmdb.org/t/p/original{$movieData['backdrop_path']}";
+                                }
+                                $formData["{$key}_backdrops"] = $wpBackdrop;
+
+                                // Trailer - mantener vacío si no existe en WP
+                                $trailerKey = $key === 'onlipeli' ? 'youtube_id' : 'trailers';
+                                $formData["{$key}_trailer_youtube_id"] = $post->meta->where('meta_key', $trailerKey)->first()?->meta_value ?? '';
+
+                                // Font
+                                $fontKey = $key === 'onlipeli' ? 'mainmovie' : 'font';
+                                $formData["{$key}_font_typography"] = $post->meta->where('meta_key', $fontKey)->first()?->meta_value ?? 'inherit';
+
+                                // Datos para preview
+                                $formData["{$key}_poster"] = $movieData['poster_path'] ? "https://image.tmdb.org/t/p/w780{$movieData['poster_path']}" : '';
+                                $formData["{$key}_title"] = $post->post_title;
+                                $formData["{$key}_additional_image"] = $movieData['poster_path'] ? "https://image.tmdb.org/t/p/w300{$movieData['poster_path']}" : '';
+
+                                // Log final form data for this site
+                                \Log::info("Final form data for {$key}", [
+                                    'synopsis' => substr($formData["{$key}_synopsis"], 0, 50) . '...',
+                                    'release_year' => $formData["{$key}_release_year"],
+                                    'runtime' => $formData["{$key}_runtime"],
+                                    'vote_average' => $formData["{$key}_vote_average"],
+                                    'vote_count' => $formData["{$key}_vote_count"],
+                                    'backdrops' => $formData["{$key}_backdrops"],
+                                    'trailer' => $formData["{$key}_trailer_youtube_id"],
+                                    'font' => $formData["{$key}_font_typography"],
+                                ]);
+                            } else {
+                                \Log::warning("Post not found for {$key}, slug: {$slug}");
+                            }
+                        }
+
+                        return $formData;
+                    })
+                    ->form(function () {
+                        $serverMovie = $this->getOwnerRecord();
+                        $tmdbService = app(TmdbService::class);
+                        $movieData = $tmdbService->getMovie($serverMovie->tmdb_id);
+
+
+
+                        // Obtener backdrops de TMDB
+                        $tmdbBackdrops = [];
+
+                        \Log::info("Movie data keys", ['keys' => array_keys($movieData ?? [])]);
+                        \Log::info("Images data", ['images' => $movieData['images'] ?? 'not set']);
+
+                        if (isset($movieData['images']['backdrops'])) {
+                            foreach ($movieData['images']['backdrops'] as $backdrop) {
+                                $tmdbBackdrops[] = "https://image.tmdb.org/t/p/w1280{$backdrop['file_path']}";
+                            }
+                            \Log::info("TMDB Backdrops loaded", ['count' => count($tmdbBackdrops), 'first' => $tmdbBackdrops[0] ?? 'none']);
+                        } else {
+                            \Log::warning("No TMDB backdrops found in movie data", ['has_images' => isset($movieData['images']), 'has_backdrops' => isset($movieData['images']['backdrops'])]);
+                        }
+
+                        $formSections = [];
+
+                        // Crear una sección por cada AssociatedWeb
+                        foreach ($serverMovie->associatedWebs as $associatedWeb) {
+                            $domain = $this->getDomainFromLink($associatedWeb->link);
+                            $key = $domain === 'clubpeli.com' ? 'clubpeli' : 'onlipeli';
+                            $domainLabel = $key === 'clubpeli' ? 'ClubPeli' : 'OnliPeli';
+
+                            $formSections[] = \Filament\Schemas\Components\Section::make($domainLabel)
+                                ->description("Editar campos para {$domain}")
+                                ->schema([
+                                    // Hidden fields para preview
+                                    \Filament\Forms\Components\Hidden::make("{$key}_poster"),
+                                    \Filament\Forms\Components\Hidden::make("{$key}_title"),
+                                    \Filament\Forms\Components\Hidden::make("{$key}_additional_image"),
+
+                                    // Campos editables
+                                    \Filament\Forms\Components\Textarea::make("{$key}_synopsis")
+                                        ->label('Sinopsis')
+                                        ->rows(4)
+                                        ->reactive()
+                                        ->columnSpanFull(),
+
+                                    \Filament\Forms\Components\TextInput::make("{$key}_release_year")
+                                        ->label('Año')
+                                        ->reactive(),
+
+                                    \Filament\Forms\Components\TextInput::make("{$key}_runtime")
+                                        ->label('Duración')
+                                        ->reactive(),
+
+                                    \Filament\Forms\Components\TextInput::make("{$key}_vote_average")
+                                        ->label('Calificación')
+                                        ->reactive(),
+
+                                    \Filament\Forms\Components\TextInput::make("{$key}_vote_count")
+                                        ->label('Votos')
+                                        ->reactive(),
+
+                                    \Filament\Forms\Components\TextInput::make("{$key}_trailer_youtube_id")
+                                        ->label('Trailer YouTube ID')
+                                        ->reactive()
+                                        ->columnSpanFull(),
+
+                                    \Filament\Forms\Components\Select::make("{$key}_font_typography")
+                                        ->label('Tipografía')
+                                        ->options([
+                                            'inherit' => 'DEFECT',
+                                            'RINGM' => 'ACCION',
+                                            'BlankaRegular' => 'TERROR',
+                                            'calendarnote' => 'ANIME',
+                                            'square77' => 'AMOR',
+                                            'CaramelMocacino' => 'COMEDIA',
+                                            'CARBON-DROID' => 'FAMILIA',
+                                            'LOVEPbo' => 'AVENTURA',
+                                            'Lovelo2LineBold' => 'COMIC',
+                                            'ValleniaLove' => 'ROMANCE',
+                                            'Vallenia' => 'FICCION',
+                                            'Fontrust' => 'ELEGANT',
+                                            'AwakeTheBeauty' => 'ESTILO',
+                                        ])
+                                        ->reactive()
+                                        ->columnSpanFull(),
+
+                                    // Preview iframe
+                                    \Filament\Forms\Components\ViewField::make("{$key}_preview")
+                                        ->label('Preview')
+                                        ->view('filament.forms.components.live-preview-iframe')
+                                        ->viewData(fn($get) => [
+                                            'domain' => $domain,
+                                            'baseUrl' => "https://clubpeli.com/wp-content/themes/diddli/masthemes/parts/iframe-preview.php",
+                                            'poster' => $get("{$key}_poster"),
+                                            'title' => $get("{$key}_title"),
+                                            'year' => $get("{$key}_release_year"),
+                                            'trailer' => $get("{$key}_trailer_youtube_id"),
+                                            'synopsis' => $get("{$key}_synopsis"),
+                                            'backdrop' => $get("{$key}_backdrops"),
+                                            'font' => $get("{$key}_font_typography"),
+                                            'additionalImage' => $get("{$key}_additional_image"),
+                                        ])
+                                        ->columnSpanFull(),
+
+                                    // Selector de backdrops TMDB
+                                    \Filament\Forms\Components\ViewField::make("{$key}_backdrops")
+                                        ->label('Fondo Player')
+                                        ->view('filament.forms.components.tmdb-backdrop-selector')
+                                        ->viewData([
+                                            'backdrops' => $tmdbBackdrops,
+                                            'statePath' => "{$key}_backdrops"
+                                        ])
+                                        ->reactive()
+                                        ->columnSpanFull(),
+                                ])
+                                ->columns(2)
+                                ->collapsible();
+                        }
+
+                        return [
+                            Flex::make($formSections)
+                                ->from('md'),
+                        ];
+                    })
+                    ->action(function (array $data) {
+                        $serverMovie = $this->getOwnerRecord();
+                        $updated = 0;
+
+                        foreach ($serverMovie->associatedWebs as $associatedWeb) {
+                            $domain = $this->getDomainFromLink($associatedWeb->link);
+                            $key = $domain === 'clubpeli.com' ? 'clubpeli' : 'onlipeli';
+                            $connection = $domain === 'clubpeli.com' ? 'wordpress' : 'onlipeli';
+
+                            // Obtener post de WordPress
+                            $wpService = app(WordPressImdbService::class);
+                            $slug = str_replace(['https://clubpeli.com/', 'https://onlipeli.net/'], '', $associatedWeb->link);
+                            $post = $wpService->findPostByPostName($slug, $domain);
+
+                            if ($post) {
+                                // Actualizar post_content
+                                \DB::connection($connection)->table('posts')
+                                    ->where('ID', $post->ID)
+                                    ->update(['post_content' => $data["{$key}_synopsis"] ?? '']);
+
+                                // Actualizar meta fields
+                                $metaUpdates = [
+                                    'overview' => $data["{$key}_synopsis"] ?? '',
+                                    'release_date' => $data["{$key}_release_year"] ?? '',
+                                    'runtime' => $data["{$key}_runtime"] ?? '',
+                                ];
+
+                                // Vote fields con nombres específicos por sitio
+                                $voteAvgKey = $key === 'onlipeli' ? 'imdbRating' : 'vote_average';
+                                $voteCountKey = $key === 'onlipeli' ? 'imdbVotes' : 'vote_count';
+                                $metaUpdates[$voteAvgKey] = $data["{$key}_vote_average"] ?? '';
+                                $metaUpdates[$voteCountKey] = $data["{$key}_vote_count"] ?? '';
+
+                                // Backdrop con nombre específico por sitio
+                                $backdropKey = $key === 'onlipeli' ? 'fondo_player' : 'backdrop_film';
+                                $metaUpdates[$backdropKey] = $data["{$key}_backdrops"] ?? '';
+
+                                // Trailer con nombre específico por sitio
+                                $trailerKey = $key === 'onlipeli' ? 'youtube_id' : 'trailers';
+                                $metaUpdates[$trailerKey] = $data["{$key}_trailer_youtube_id"] ?? '';
+
+                                // Font con nombre específico por sitio
+                                $fontKey = $key === 'onlipeli' ? 'mainmovie' : 'font';
+                                $metaUpdates[$fontKey] = $data["{$key}_font_typography"] ?? 'inherit';
+
+                                // OnliPeli también necesita Released
+                                if ($key === 'onlipeli') {
+                                    $metaUpdates['Released'] = $data["{$key}_release_year"] ?? '';
+                                }
+
+                                // Actualizar cada meta field
+                                foreach ($metaUpdates as $metaKey => $metaValue) {
+                                    \DB::connection($connection)->table('postmeta')
+                                        ->updateOrInsert(
+                                            ['post_id' => $post->ID, 'meta_key' => $metaKey],
+                                            ['meta_value' => $metaValue]
+                                        );
+                                }
+
+                                $updated++;
+                            }
+                        }
+
+                        Notification::make()
+                            ->success()
+                            ->title('Campos actualizados')
+                            ->body("Se actualizaron {$updated} sitios web correctamente")
+                            ->send();
+                    }),
             ])
+
             ->recordActions([
                 # Botón para editar en WordPress
                 Action::make('editInWordPress')
@@ -767,11 +1087,11 @@ class AssociatedWebRelationManager extends RelationManager
 
                 // Botón para enviar un AssociatedWeb individual a WordPress
                 Action::make('sendToWordPress')
-                    ->label('Enviar a WordPress')
+                    ->label('Enviar o Actualizar MovieLink a WP')
                     ->icon('heroicon-o-arrow-up-tray')
                     ->color('info')
                     ->requiresConfirmation()
-                    ->modalHeading('Enviar a WordPress')
+                    ->modalHeading('Enviar o Actualizar MovieLink a WP')
                     ->modalDescription('Se enviará el primer MovieLink de este registro a WordPress.')
                     ->action(function (AssociatedWeb $record) {
                         try {
@@ -864,8 +1184,14 @@ class AssociatedWebRelationManager extends RelationManager
                         }
                     }),
 
-                EditAction::make(),
-                DeleteAction::make(),
+                \Filament\Actions\ActionGroup::make([
+                    EditAction::make()
+                        ->color('gray')
+                        ->hiddenLabel(),
+                    DeleteAction::make()
+                        ->color('gray')
+                        ->hiddenLabel(),
+                ])->buttonGroup(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

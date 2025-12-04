@@ -112,11 +112,21 @@ class WordPressImdbService
     {
         $connection = $this->getConnectionByDomain($domain);
 
-        return WordPressPost::on($connection)
+        $post = WordPressPost::on($connection)
             ->where('post_name', $postName)
             ->whereIn('post_status', ['publish', 'draft'])
-            ->with('meta')
             ->first();
+
+        if ($post) {
+            // Cargar meta manualmente con la conexión correcta
+            $meta = WordPressPostMeta::on($connection)
+                ->where('post_id', $post->ID)
+                ->get();
+
+            $post->setRelation('meta', $meta);
+        }
+
+        return $post;
     }
 
     /**
