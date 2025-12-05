@@ -64,8 +64,13 @@ class TmdbService
         // Slug
         $slug = \Str::slug($title);
 
-        // Runtime en minutos
-        $runtime = isset($movieData['runtime']) ? $movieData['runtime'] . ' min' : '';
+        // Runtime en formato HH:MM:SS
+        $runtime = '';
+        if (isset($movieData['runtime']) && $movieData['runtime'] > 0) {
+            $hours = floor($movieData['runtime'] / 60);
+            $minutes = $movieData['runtime'] % 60;
+            $runtime = sprintf('%02d:%02d:00', $hours, $minutes);
+        }
 
         // Países
         $countries = collect($movieData['production_countries'] ?? [])

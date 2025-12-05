@@ -445,7 +445,7 @@ class AssociatedWebRelationManager extends RelationManager
                                 ->schema([
                                     Textarea::make('synopsis')
                                         ->label('Sinopsis')
-                                        ->rows(5)
+                                        ->rows(3)
                                         ->default($movieData['overview'] ?? $formattedData['post_content'])
                                         ->helperText('Se guardará en post_content y como meta "overview"')
                                         ->columnSpanFull(),
@@ -462,21 +462,25 @@ class AssociatedWebRelationManager extends RelationManager
 
                                     TextInput::make('vote_average')
                                         ->label('Calificación Promedio (IMDB Rating)')
-                                        ->default($movieData['vote_average'] ?? '')
+                                        #->default($movieData['vote_average'] ?? '')
+                                        ->default(fn() => number_format(mt_rand(79, 95) / 10, 1))
                                         ->helperText('Se guarda como "imdbRating" en OnliPeli y "vote_average" en ClubPeli'),
 
                                     TextInput::make('vote_count')
                                         ->label('Cantidad de Votos (IMDB Votes)')
-                                        ->default($movieData['vote_count'] ?? '')
+                                        #->default($movieData['vote_count'] ?? '')
+                                        ->default(fn() => number_format(mt_rand(45100, 79500), 0, '', ','))
                                         ->helperText('Se guarda como "imdbVotes" en OnliPeli y "vote_count" en ClubPeli'),
 
                                     TextInput::make('backdrops')
                                         ->label('Fondo Player (URL)')
+                                        ->hidden()
                                         ->helperText('Una URL por línea. Se guardará como "fondo_player" en OnliPeli y "backdrop_film" en ClubPeli')
                                         ->columnSpanFull(),
 
                                     TextInput::make('trailer_youtube_id')
                                         ->label('Trailer YouTube ID')
+                                        ->hidden()
                                         ->helperText('Solo el ID del video (ej: dQw4w9WgXcQ). Se guardará como "youtube_id" en OnliPeli y "trailers" en ClubPeli'),
 
                                     Select::make('font_typography')
@@ -496,7 +500,8 @@ class AssociatedWebRelationManager extends RelationManager
                                             'Fontrust' => 'ELEGANT (Fontrust)',
                                             'AwakeTheBeauty' => 'ESTILO (AwakeTheBeauty)',
                                         ])
-                                        ->default('inherit')
+                                        ->default('RINGM')
+                                        ->hidden()
                                         ->helperText('Se guardará como "mainmovie" en OnliPeli y "font" en ClubPeli'),
                                 ])
                                 ->columns(2)
@@ -506,31 +511,44 @@ class AssociatedWebRelationManager extends RelationManager
                             \Filament\Schemas\Components\Section::make('Información IMDB (Solo OnliPeli)')
                                 ->description('Estos campos se aplicarán solo a OnliPeli.net')
                                 ->compact()
+                                ->secondary()
                                 ->schema([
-                                    TextInput::make('original_title')
-                                        ->label('Original Title')
-                                        ->default($formattedData['meta']['Title'])
-                                        ->columnSpanFull(),
-
-                                    TextInput::make('rated')
+                                    \Filament\Forms\Components\ToggleButtons::make('rated')
                                         ->label('Rated')
-                                        ->default($formattedData['meta']['Rated'])
+                                        ->options([
+                                            'Todos' => 'Todos',
+                                            '+ 12' => '+ 12',
+                                            '+ 15' => '+ 15',
+                                            '+ 18' => '+ 18',
+                                        ])
+                                        ->colors([
+                                            'Todos' => 'success',
+                                            '+ 12' => 'info',
+                                            '+ 15' => 'warning',
+                                            '+ 18' => 'danger',
+                                        ])
+                                        ->inline()
+                                        ->grouped()
+                                        #->default($formattedData['meta']['Rated'])
                                         ->helperText('Clasificación (ej: PG-13, R)'),
-
-
 
                                     TextInput::make('awards')
                                         ->label('Awards')
                                         ->default($formattedData['meta']['Awards'])
+                                        ->autocomplete(false)
+                                        ->datalist(['4 Wins & 2 nominations', '2 Wins & 2 nominations', '2 Wins & 1 nomination', '1 Win & 1 nomination'])
                                         ->helperText('Premios recibidos'),
+
+                                    TextInput::make('original_title')
+                                        ->label('Original Title')
+                                        ->default($formattedData['meta']['Title']),
 
                                     TextInput::make('country')
                                         ->label('Country')
                                         ->default($formattedData['meta']['Country']),
                                 ])
                                 ->columns(2)
-                                ->collapsible()
-                                ->collapsed(),
+                                ->collapsible(),
                         ];
                     })
                     ->action(function (array $data) {
@@ -773,7 +791,7 @@ class AssociatedWebRelationManager extends RelationManager
                     ->icon('heroicon-o-pencil-square')
                     ->color('info')
                     ->visible(fn() => $this->getOwnerRecord()->associatedWebs->isNotEmpty())
-                    ->modalWidth('7xl')
+                    ->modalWidth('8xl')
                     ->fillForm(function () {
                         $serverMovie = $this->getOwnerRecord();
                         $tmdbService = app(TmdbService::class);
@@ -785,13 +803,16 @@ class AssociatedWebRelationManager extends RelationManager
                         // Para cada AssociatedWeb, cargar sus datos actuales
                         foreach ($serverMovie->associatedWebs as $associatedWeb) {
                             $domain = $this->getDomainFromLink($associatedWeb->link);
-                            $key = $domain === 'clubpeli.com' ? 'clubpeli' : 'onlipeli';
+                            // Usar ID del AssociatedWeb para clave única (permite múltiples posts del mismo dominio)
+                            $key = "post_{$associatedWeb->id}";
+                            $siteType = $domain === 'clubpeli.com' ? 'clubpeli' : 'onlipeli';
 
-                            \Log::info("Loading data for domain: {$domain}, key: {$key}");
+                            \Log::info("Loading data for domain: {$domain}, key: {$key}, siteType: {$siteType}");
 
                             // Obtener post de WordPress
                             $wpService = app(WordPressImdbService::class);
-                            $slug = str_replace(['https://clubpeli.com/', 'https://onlipeli.net/', 'https://www.onlipeli.net/'], '', $associatedWeb->link);
+                            $slug = str_replace(['https://clubpeli.com/', 'https://onlipeli.net/', 'https://www.onlipeli.net/', 'https://www.clubpeli.com/'], '', $associatedWeb->link);
+                            $slug = trim($slug, '/');
                             $post = $wpService->findPostByPostName($slug, $domain);
 
                             if ($post) {
@@ -801,15 +822,15 @@ class AssociatedWebRelationManager extends RelationManager
                                 $allMeta = $post->meta->pluck('meta_value', 'meta_key')->toArray();
                                 \Log::info("All meta keys for {$key}", ['meta_keys' => array_keys($allMeta)]);
 
-                                // Define meta keys for each site
+                                // Define meta keys for each site (usar siteType, no key)
                                 $metaKeys = [
                                     'release_date' => 'release_date',
                                     'runtime' => 'runtime',
-                                    'vote_average' => $key === 'onlipeli' ? 'imdbRating' : 'vote_average',
-                                    'vote_count' => $key === 'onlipeli' ? 'imdbVotes' : 'vote_count',
-                                    'backdrop' => $key === 'onlipeli' ? 'fondo_player' : 'backdrop_film',
-                                    'trailer' => $key === 'onlipeli' ? 'youtube_id' : 'trailers',
-                                    'font' => $key === 'onlipeli' ? 'mainmovie' : 'font',
+                                    'vote_average' => $siteType === 'onlipeli' ? 'imdbRating' : 'vote_average',
+                                    'vote_count' => $siteType === 'onlipeli' ? 'imdbVotes' : 'vote_count',
+                                    'backdrop' => $siteType === 'onlipeli' ? 'fondo_player' : 'backdrop_film',
+                                    'trailer' => $siteType === 'onlipeli' ? 'youtube_id' : 'trailers',
+                                    'font' => $siteType === 'onlipeli' ? 'mainmovie' : 'font',
                                 ];
 
                                 // Log WordPress values for each field
@@ -829,25 +850,65 @@ class AssociatedWebRelationManager extends RelationManager
                                 $wpReleaseYear = $post->meta->where('meta_key', 'release_date')->first()?->meta_value ?? '';
                                 $formData["{$key}_release_year"] = $wpReleaseYear ?: (isset($movieData['release_date']) ? substr($movieData['release_date'], 0, 4) : '');
 
-                                // Runtime - usar TMDB si está vacío
+                                // Runtime - detectar formato y transformar si es necesario
                                 $wpRuntime = $post->meta->where('meta_key', 'runtime')->first()?->meta_value ?? '';
-                                if (!$wpRuntime && isset($movieData['runtime'])) {
+                                $originalRuntime = $wpRuntime;
+                                $runtimeWasTransformed = false;
+
+                                // Función para verificar si está en formato HH:MM:SS
+                                $isValidTimeFormat = function ($value) {
+                                    return preg_match('/^\d{2}:\d{2}:\d{2}$/', $value);
+                                };
+
+                                if ($wpRuntime) {
+                                    if (!$isValidTimeFormat($wpRuntime)) {
+                                        // Intentar transformar diferentes formatos
+                                        $runtimeWasTransformed = true;
+
+                                        // Extraer solo números (ej: "155 min" -> 155, "2h 35m" -> intenta parsear)
+                                        if (preg_match('/^(\d+)\s*(min|minutes)?$/i', $wpRuntime, $matches)) {
+                                            // Formato: "155" o "155 min"
+                                            $totalMinutes = (int) $matches[1];
+                                            $hours = floor($totalMinutes / 60);
+                                            $minutes = $totalMinutes % 60;
+                                            $wpRuntime = sprintf('%02d:%02d:00', $hours, $minutes);
+                                        } elseif (preg_match('/^(\d+)h?\s*(\d+)?m?$/i', $wpRuntime, $matches)) {
+                                            // Formato: "2h 35m" o "2h35m" o "2 35"
+                                            $hours = (int) $matches[1];
+                                            $minutes = isset($matches[2]) ? (int) $matches[2] : 0;
+                                            $wpRuntime = sprintf('%02d:%02d:00', $hours, $minutes);
+                                        } elseif (preg_match('/^(\d{1,2}):(\d{2})$/', $wpRuntime, $matches)) {
+                                            // Formato: "2:35" o "02:35" (sin segundos)
+                                            $wpRuntime = sprintf('%02d:%02d:00', (int) $matches[1], (int) $matches[2]);
+                                        } else {
+                                            // Si no podemos parsear, dejamos el original pero marcamos como sin transformar exitosa
+                                            $wpRuntime = $originalRuntime;
+                                            $runtimeWasTransformed = false;
+                                        }
+                                    }
+                                } elseif (isset($movieData['runtime'])) {
+                                    // No hay runtime en WP, usar TMDB
                                     $hours = floor($movieData['runtime'] / 60);
                                     $minutes = $movieData['runtime'] % 60;
                                     $wpRuntime = sprintf('%02d:%02d:00', $hours, $minutes);
+                                    $originalRuntime = "TMDB: {$movieData['runtime']} min";
+                                    $runtimeWasTransformed = true;
                                 }
-                                $formData["{$key}_runtime"] = $wpRuntime;
 
-                                // Votes - usar TMDB si está vacío
-                                $voteAvgKey = $key === 'onlipeli' ? 'imdbRating' : 'vote_average';
-                                $voteCountKey = $key === 'onlipeli' ? 'imdbVotes' : 'vote_count';
+                                $formData["{$key}_runtime"] = $wpRuntime;
+                                $formData["{$key}_runtime_original"] = $originalRuntime;
+                                $formData["{$key}_runtime_transformed"] = $runtimeWasTransformed;
+
+                                // Votes - usar TMDB si está vacío (usar siteType para determinar meta keys)
+                                $voteAvgKey = $siteType === 'onlipeli' ? 'imdbRating' : 'vote_average';
+                                $voteCountKey = $siteType === 'onlipeli' ? 'imdbVotes' : 'vote_count';
                                 $wpVoteAvg = $post->meta->where('meta_key', $voteAvgKey)->first()?->meta_value ?? '';
                                 $wpVoteCount = $post->meta->where('meta_key', $voteCountKey)->first()?->meta_value ?? '';
                                 $formData["{$key}_vote_average"] = $wpVoteAvg ?: ($movieData['vote_average'] ?? '');
                                 $formData["{$key}_vote_count"] = $wpVoteCount ?: ($movieData['vote_count'] ?? '');
 
                                 // Backdrop - usar TMDB si está vacío
-                                $backdropKey = $key === 'onlipeli' ? 'fondo_player' : 'backdrop_film';
+                                $backdropKey = $siteType === 'onlipeli' ? 'fondo_player' : 'backdrop_film';
                                 $wpBackdrop = $post->meta->where('meta_key', $backdropKey)->first()?->meta_value ?? '';
                                 if (!$wpBackdrop && isset($movieData['backdrop_path'])) {
                                     $wpBackdrop = "https://image.tmdb.org/t/p/original{$movieData['backdrop_path']}";
@@ -855,17 +916,21 @@ class AssociatedWebRelationManager extends RelationManager
                                 $formData["{$key}_backdrops"] = $wpBackdrop;
 
                                 // Trailer - mantener vacío si no existe en WP
-                                $trailerKey = $key === 'onlipeli' ? 'youtube_id' : 'trailers';
+                                $trailerKey = $siteType === 'onlipeli' ? 'youtube_id' : 'trailers';
                                 $formData["{$key}_trailer_youtube_id"] = $post->meta->where('meta_key', $trailerKey)->first()?->meta_value ?? '';
 
                                 // Font
-                                $fontKey = $key === 'onlipeli' ? 'mainmovie' : 'font';
+                                $fontKey = $siteType === 'onlipeli' ? 'mainmovie' : 'font';
                                 $formData["{$key}_font_typography"] = $post->meta->where('meta_key', $fontKey)->first()?->meta_value ?? 'inherit';
 
                                 // Datos para preview
                                 $formData["{$key}_poster"] = $movieData['poster_path'] ? "https://image.tmdb.org/t/p/w780{$movieData['poster_path']}" : '';
                                 $formData["{$key}_title"] = $post->post_title;
                                 $formData["{$key}_additional_image"] = $movieData['poster_path'] ? "https://image.tmdb.org/t/p/w300{$movieData['poster_path']}" : '';
+
+                                // Guardar siteType para uso posterior
+                                $formData["{$key}_site_type"] = $siteType;
+                                $formData["{$key}_associated_web_id"] = $associatedWeb->id;
 
                                 // Log final form data for this site
                                 \Log::info("Final form data for {$key}", [
@@ -912,22 +977,33 @@ class AssociatedWebRelationManager extends RelationManager
                         // Crear una sección por cada AssociatedWeb
                         foreach ($serverMovie->associatedWebs as $associatedWeb) {
                             $domain = $this->getDomainFromLink($associatedWeb->link);
-                            $key = $domain === 'clubpeli.com' ? 'clubpeli' : 'onlipeli';
-                            $domainLabel = $key === 'clubpeli' ? 'ClubPeli' : 'OnliPeli';
+                            // Usar ID del AssociatedWeb para clave única
+                            $key = "post_{$associatedWeb->id}";
+                            $siteType = $domain === 'clubpeli.com' ? 'clubpeli' : 'onlipeli';
+                            $siteLabel = $siteType === 'clubpeli' ? 'ClubPeli' : 'OnliPeli';
 
-                            $formSections[] = \Filament\Schemas\Components\Section::make($domainLabel)
-                                ->description("Editar campos para {$domain}")
+                            // Obtener título del post para mostrar en la sección
+                            $wpService = app(WordPressImdbService::class);
+                            $slug = str_replace(['https://clubpeli.com/', 'https://onlipeli.net/', 'https://www.onlipeli.net/', 'https://www.clubpeli.com/'], '', $associatedWeb->link);
+                            $slug = trim($slug, '/');
+                            $post = $wpService->findPostByPostName($slug, $domain);
+                            $postTitle = $post ? $post->post_title : $slug;
+
+                            $formSections[] = \Filament\Schemas\Components\Section::make("{$siteLabel}: {$postTitle}")
+                                ->description("ID: {$associatedWeb->id} | {$associatedWeb->link}")
                                 ->compact()
                                 ->schema([
-                                    // Hidden fields para preview
+                                    // Hidden fields para preview y metadata
                                     \Filament\Forms\Components\Hidden::make("{$key}_poster"),
                                     \Filament\Forms\Components\Hidden::make("{$key}_title"),
                                     \Filament\Forms\Components\Hidden::make("{$key}_additional_image"),
+                                    \Filament\Forms\Components\Hidden::make("{$key}_site_type"),
+                                    \Filament\Forms\Components\Hidden::make("{$key}_associated_web_id"),
 
                                     // Campos editables
                                     \Filament\Forms\Components\Textarea::make("{$key}_synopsis")
                                         ->label('Sinopsis')
-                                        ->rows(4)
+                                        ->rows(3)
                                         ->reactive()
                                         ->columnSpanFull(),
 
@@ -935,9 +1011,38 @@ class AssociatedWebRelationManager extends RelationManager
                                         ->label('Año')
                                         ->reactive(),
 
+                                    // Hidden fields para tracking de runtime
+                                    \Filament\Forms\Components\Hidden::make("{$key}_runtime_original"),
+                                    \Filament\Forms\Components\Hidden::make("{$key}_runtime_transformed"),
+
                                     \Filament\Forms\Components\TextInput::make("{$key}_runtime")
                                         ->label('Duración')
-                                        ->reactive(),
+                                        ->placeholder('HH:MM:SS')
+                                        ->reactive()
+                                        ->helperText(function ($get) use ($key) {
+                                            $wasTransformed = $get("{$key}_runtime_transformed");
+                                            $original = $get("{$key}_runtime_original");
+                                            $current = $get("{$key}_runtime");
+
+                                            if (!$current) {
+                                                return '⚠️ Sin duración definida';
+                                            }
+
+                                            // Verificar si el formato actual es válido
+                                            $isValid = preg_match('/^\d{2}:\d{2}:\d{2}$/', $current);
+
+                                            if ($wasTransformed && $original) {
+                                                return new \Illuminate\Support\HtmlString(
+                                                    "✅ Transformado de <strong>{$original}</strong> → <strong>{$current}</strong>"
+                                                );
+                                            } elseif ($isValid) {
+                                                return '✅ Formato correcto (HH:MM:SS)';
+                                            } else {
+                                                return new \Illuminate\Support\HtmlString(
+                                                    '⚠️ Formato incorrecto. Debe ser <strong>HH:MM:SS</strong> (ej: 02:35:00)'
+                                                );
+                                            }
+                                        }),
 
                                     \Filament\Forms\Components\TextInput::make("{$key}_vote_average")
                                         ->label('Calificación')
@@ -1023,9 +1128,11 @@ class AssociatedWebRelationManager extends RelationManager
 
                         foreach ($serverMovie->associatedWebs as $associatedWeb) {
                             $domain = $this->getDomainFromLink($associatedWeb->link);
-                            $key = $domain === 'clubpeli.com' ? 'clubpeli' : 'onlipeli';
+                            // Usar ID del AssociatedWeb para clave única (igual que en fillForm y form)
+                            $key = "post_{$associatedWeb->id}";
+                            $siteType = $domain === 'clubpeli.com' ? 'clubpeli' : 'onlipeli';
                             $connection = $domain === 'clubpeli.com' ? 'wordpress' : 'onlipeli';
-                            $domainLabel = $key === 'clubpeli' ? 'ClubPeli' : 'OnliPeli';
+                            $siteLabel = $siteType === 'clubpeli' ? 'ClubPeli' : 'OnliPeli';
 
                             // Obtener post de WordPress
                             $slug = str_replace(['https://clubpeli.com/', 'https://onlipeli.net/', 'https://www.clubpeli.com/', 'https://www.onlipeli.net/'], '', $associatedWeb->link);
@@ -1041,14 +1148,14 @@ class AssociatedWebRelationManager extends RelationManager
                             $currentMeta = $post->meta->pluck('meta_value', 'meta_key')->toArray();
                             $currentSynopsis = $post->post_content;
 
-                            // Definir mapeo de campos según el sitio
-                            $voteAvgKey = $key === 'onlipeli' ? 'imdbRating' : 'vote_average';
-                            $voteCountKey = $key === 'onlipeli' ? 'imdbVotes' : 'vote_count';
-                            $backdropKey = $key === 'onlipeli' ? 'fondo_player' : 'backdrop_film';
-                            $trailerKey = $key === 'onlipeli' ? 'youtube_id' : 'trailers';
-                            $fontKey = $key === 'onlipeli' ? 'mainmovie' : 'font';
+                            // Definir mapeo de campos según el sitio (usar siteType)
+                            $voteAvgKey = $siteType === 'onlipeli' ? 'imdbRating' : 'vote_average';
+                            $voteCountKey = $siteType === 'onlipeli' ? 'imdbVotes' : 'vote_count';
+                            $backdropKey = $siteType === 'onlipeli' ? 'fondo_player' : 'backdrop_film';
+                            $trailerKey = $siteType === 'onlipeli' ? 'youtube_id' : 'trailers';
+                            $fontKey = $siteType === 'onlipeli' ? 'mainmovie' : 'font';
 
-                            // Preparar nuevos valores del formulario
+                            // Preparar nuevos valores del formulario (usar key único)
                             $newValues = [
                                 'synopsis' => $data["{$key}_synopsis"] ?? '',
                                 'overview' => $data["{$key}_synopsis"] ?? '',
@@ -1061,7 +1168,7 @@ class AssociatedWebRelationManager extends RelationManager
                                 $fontKey => $data["{$key}_font_typography"] ?? 'inherit',
                             ];
 
-                            if ($key === 'onlipeli') {
+                            if ($siteType === 'onlipeli') {
                                 $newValues['Released'] = $data["{$key}_release_year"] ?? '';
                             }
 
@@ -1099,12 +1206,12 @@ class AssociatedWebRelationManager extends RelationManager
 
                             // Solo actualizar si hay cambios
                             if (!$hasChanges) {
-                                $skippedSites[] = $domainLabel;
-                                \Log::info("No changes detected for {$domainLabel}, skipping update");
+                                $skippedSites[] = "{$siteLabel}: {$post->post_title}";
+                                \Log::info("No changes detected for {$siteLabel}: {$post->post_title}, skipping update");
                                 continue;
                             }
 
-                            \Log::info("Changes detected for {$domainLabel}", ['fields' => $changedFields]);
+                            \Log::info("Changes detected for {$siteLabel}: {$post->post_title}", ['fields' => $changedFields]);
 
                             // Actualizar post_content
                             \DB::connection($connection)->table('posts')
@@ -1123,7 +1230,7 @@ class AssociatedWebRelationManager extends RelationManager
                                 $fontKey => $newValues[$fontKey],
                             ];
 
-                            if ($key === 'onlipeli') {
+                            if ($siteType === 'onlipeli') {
                                 $metaUpdates['Released'] = $newValues['Released'];
                             }
 
@@ -1136,7 +1243,7 @@ class AssociatedWebRelationManager extends RelationManager
                                     );
                             }
 
-                            $updatedSites[] = "{$domainLabel} (" . implode(', ', $changedFields) . ")";
+                            $updatedSites[] = "{$siteLabel}: {$post->post_title} (" . implode(', ', $changedFields) . ")";
                         }
 
                         // Mostrar notificación según los resultados
