@@ -330,6 +330,7 @@ class AssociatedWebRelationManager extends RelationManager
                                 // Sección ClubPeli
                                 \Filament\Schemas\Components\Section::make('ClubPeli.com')
                                     ->description('Configuración para ClubPeli')
+                                    ->compact()
                                     ->schema([
                                         Hidden::make('clubpeli_existing_id'),
                                         Hidden::make('clubpeli_exists')->default(false),
@@ -384,6 +385,7 @@ class AssociatedWebRelationManager extends RelationManager
                                 // Sección OnliPeli
                                 \Filament\Schemas\Components\Section::make('OnliPeli.net')
                                     ->description('Configuración para OnliPeli')
+                                    ->compact()
                                     ->schema([
                                         Hidden::make('onlipeli_existing_id'),
                                         Hidden::make('onlipeli_exists')->default(false),
@@ -439,6 +441,7 @@ class AssociatedWebRelationManager extends RelationManager
                             // Campos comunes
                             \Filament\Schemas\Components\Section::make('Contenido Común')
                                 ->description('Estos campos se aplicarán a ambos sitios')
+                                ->compact()
                                 ->schema([
                                     Textarea::make('synopsis')
                                         ->label('Sinopsis')
@@ -502,6 +505,7 @@ class AssociatedWebRelationManager extends RelationManager
                             // Campos IMDB solo para OnliPeli
                             \Filament\Schemas\Components\Section::make('Información IMDB (Solo OnliPeli)')
                                 ->description('Estos campos se aplicarán solo a OnliPeli.net')
+                                ->compact()
                                 ->schema([
                                     TextInput::make('original_title')
                                         ->label('Original Title')
@@ -913,6 +917,7 @@ class AssociatedWebRelationManager extends RelationManager
 
                             $formSections[] = \Filament\Schemas\Components\Section::make($domainLabel)
                                 ->description("Editar campos para {$domain}")
+                                ->compact()
                                 ->schema([
                                     // Hidden fields para preview
                                     \Filament\Forms\Components\Hidden::make("{$key}_poster"),
@@ -944,8 +949,7 @@ class AssociatedWebRelationManager extends RelationManager
 
                                     \Filament\Forms\Components\TextInput::make("{$key}_trailer_youtube_id")
                                         ->label('Trailer YouTube ID')
-                                        ->reactive()
-                                        ->columnSpanFull(),
+                                        ->reactive(),
 
                                     \Filament\Forms\Components\Select::make("{$key}_font_typography")
                                         ->label('Tipografía')
@@ -964,10 +968,16 @@ class AssociatedWebRelationManager extends RelationManager
                                             'Fontrust' => 'ELEGANT',
                                             'AwakeTheBeauty' => 'ESTILO',
                                         ])
-                                        ->reactive()
+                                        ->native(false)
+                                        ->reactive(),
+
+                                    \Filament\Forms\Components\TextInput::make("{$key}_backdrops")
+                                        ->label('URL del Backdrop')
+                                        ->placeholder('Selecciona una imagen de TMDB o ingresa una URL')
+                                        ->live(debounce: 500)
                                         ->columnSpanFull(),
 
-                                    // Preview iframe
+                                    // Preview iframe (después del selector)
                                     \Filament\Forms\Components\ViewField::make("{$key}_preview")
                                         ->label('Preview')
                                         ->view('filament.forms.components.live-preview-iframe')
@@ -982,18 +992,18 @@ class AssociatedWebRelationManager extends RelationManager
                                             'backdrop' => $get("{$key}_backdrops"),
                                             'font' => $get("{$key}_font_typography"),
                                             'additionalImage' => $get("{$key}_additional_image"),
+                                            'previewId' => "{$key}_preview"
                                         ])
                                         ->columnSpanFull(),
 
                                     // Selector de backdrops TMDB
-                                    \Filament\Forms\Components\ViewField::make("{$key}_backdrops")
-                                        ->label('Fondo Player')
+                                    \Filament\Forms\Components\ViewField::make("{$key}_backdrop_selector")
+                                        ->label('Seleccionar de TMDB')
                                         ->view('filament.forms.components.tmdb-backdrop-selector')
                                         ->viewData([
                                             'backdrops' => $tmdbBackdrops,
-                                            'statePath' => "{$key}_backdrops"
+                                            'targetField' => "data.{$key}_backdrops",
                                         ])
-                                        ->reactive()
                                         ->columnSpanFull(),
                                 ])
                                 ->columns(2)
@@ -1007,72 +1017,153 @@ class AssociatedWebRelationManager extends RelationManager
                     })
                     ->action(function (array $data) {
                         $serverMovie = $this->getOwnerRecord();
-                        $updated = 0;
+                        $wpService = app(WordPressImdbService::class);
+                        $updatedSites = [];
+                        $skippedSites = [];
 
                         foreach ($serverMovie->associatedWebs as $associatedWeb) {
                             $domain = $this->getDomainFromLink($associatedWeb->link);
                             $key = $domain === 'clubpeli.com' ? 'clubpeli' : 'onlipeli';
                             $connection = $domain === 'clubpeli.com' ? 'wordpress' : 'onlipeli';
+                            $domainLabel = $key === 'clubpeli' ? 'ClubPeli' : 'OnliPeli';
 
                             // Obtener post de WordPress
-                            $wpService = app(WordPressImdbService::class);
-                            $slug = str_replace(['https://clubpeli.com/', 'https://onlipeli.net/'], '', $associatedWeb->link);
+                            $slug = str_replace(['https://clubpeli.com/', 'https://onlipeli.net/', 'https://www.clubpeli.com/', 'https://www.onlipeli.net/'], '', $associatedWeb->link);
+                            $slug = trim($slug, '/');
                             $post = $wpService->findPostByPostName($slug, $domain);
 
-                            if ($post) {
-                                // Actualizar post_content
-                                \DB::connection($connection)->table('posts')
-                                    ->where('ID', $post->ID)
-                                    ->update(['post_content' => $data["{$key}_synopsis"] ?? '']);
-
-                                // Actualizar meta fields
-                                $metaUpdates = [
-                                    'overview' => $data["{$key}_synopsis"] ?? '',
-                                    'release_date' => $data["{$key}_release_year"] ?? '',
-                                    'runtime' => $data["{$key}_runtime"] ?? '',
-                                ];
-
-                                // Vote fields con nombres específicos por sitio
-                                $voteAvgKey = $key === 'onlipeli' ? 'imdbRating' : 'vote_average';
-                                $voteCountKey = $key === 'onlipeli' ? 'imdbVotes' : 'vote_count';
-                                $metaUpdates[$voteAvgKey] = $data["{$key}_vote_average"] ?? '';
-                                $metaUpdates[$voteCountKey] = $data["{$key}_vote_count"] ?? '';
-
-                                // Backdrop con nombre específico por sitio
-                                $backdropKey = $key === 'onlipeli' ? 'fondo_player' : 'backdrop_film';
-                                $metaUpdates[$backdropKey] = $data["{$key}_backdrops"] ?? '';
-
-                                // Trailer con nombre específico por sitio
-                                $trailerKey = $key === 'onlipeli' ? 'youtube_id' : 'trailers';
-                                $metaUpdates[$trailerKey] = $data["{$key}_trailer_youtube_id"] ?? '';
-
-                                // Font con nombre específico por sitio
-                                $fontKey = $key === 'onlipeli' ? 'mainmovie' : 'font';
-                                $metaUpdates[$fontKey] = $data["{$key}_font_typography"] ?? 'inherit';
-
-                                // OnliPeli también necesita Released
-                                if ($key === 'onlipeli') {
-                                    $metaUpdates['Released'] = $data["{$key}_release_year"] ?? '';
-                                }
-
-                                // Actualizar cada meta field
-                                foreach ($metaUpdates as $metaKey => $metaValue) {
-                                    \DB::connection($connection)->table('postmeta')
-                                        ->updateOrInsert(
-                                            ['post_id' => $post->ID, 'meta_key' => $metaKey],
-                                            ['meta_value' => $metaValue]
-                                        );
-                                }
-
-                                $updated++;
+                            if (!$post) {
+                                \Log::warning("Post not found for save: {$domain}, slug: {$slug}");
+                                continue;
                             }
+
+                            // Obtener valores actuales de WordPress para comparar
+                            $currentMeta = $post->meta->pluck('meta_value', 'meta_key')->toArray();
+                            $currentSynopsis = $post->post_content;
+
+                            // Definir mapeo de campos según el sitio
+                            $voteAvgKey = $key === 'onlipeli' ? 'imdbRating' : 'vote_average';
+                            $voteCountKey = $key === 'onlipeli' ? 'imdbVotes' : 'vote_count';
+                            $backdropKey = $key === 'onlipeli' ? 'fondo_player' : 'backdrop_film';
+                            $trailerKey = $key === 'onlipeli' ? 'youtube_id' : 'trailers';
+                            $fontKey = $key === 'onlipeli' ? 'mainmovie' : 'font';
+
+                            // Preparar nuevos valores del formulario
+                            $newValues = [
+                                'synopsis' => $data["{$key}_synopsis"] ?? '',
+                                'overview' => $data["{$key}_synopsis"] ?? '',
+                                'release_date' => $data["{$key}_release_year"] ?? '',
+                                'runtime' => $data["{$key}_runtime"] ?? '',
+                                $voteAvgKey => $data["{$key}_vote_average"] ?? '',
+                                $voteCountKey => $data["{$key}_vote_count"] ?? '',
+                                $backdropKey => $data["{$key}_backdrops"] ?? '',
+                                $trailerKey => $data["{$key}_trailer_youtube_id"] ?? '',
+                                $fontKey => $data["{$key}_font_typography"] ?? 'inherit',
+                            ];
+
+                            if ($key === 'onlipeli') {
+                                $newValues['Released'] = $data["{$key}_release_year"] ?? '';
+                            }
+
+                            // Detectar cambios
+                            $hasChanges = false;
+                            $changedFields = [];
+
+                            // Comparar synopsis (post_content)
+                            if (trim($currentSynopsis) !== trim($newValues['synopsis'])) {
+                                $hasChanges = true;
+                                $changedFields[] = 'Synopsis';
+                            }
+
+                            // Comparar meta fields
+                            $metaFieldsToCheck = [
+                                'overview' => 'Overview',
+                                'release_date' => 'Año',
+                                'runtime' => 'Duración',
+                                $voteAvgKey => 'Rating',
+                                $voteCountKey => 'Votos',
+                                $backdropKey => 'Backdrop',
+                                $trailerKey => 'Trailer',
+                                $fontKey => 'Font',
+                            ];
+
+                            foreach ($metaFieldsToCheck as $metaKey => $fieldLabel) {
+                                $currentValue = trim($currentMeta[$metaKey] ?? '');
+                                $newValue = trim($newValues[$metaKey] ?? '');
+
+                                if ($currentValue !== $newValue) {
+                                    $hasChanges = true;
+                                    $changedFields[] = $fieldLabel;
+                                }
+                            }
+
+                            // Solo actualizar si hay cambios
+                            if (!$hasChanges) {
+                                $skippedSites[] = $domainLabel;
+                                \Log::info("No changes detected for {$domainLabel}, skipping update");
+                                continue;
+                            }
+
+                            \Log::info("Changes detected for {$domainLabel}", ['fields' => $changedFields]);
+
+                            // Actualizar post_content
+                            \DB::connection($connection)->table('posts')
+                                ->where('ID', $post->ID)
+                                ->update(['post_content' => $newValues['synopsis']]);
+
+                            // Preparar meta updates (sin synopsis que es post_content)
+                            $metaUpdates = [
+                                'overview' => $newValues['overview'],
+                                'release_date' => $newValues['release_date'],
+                                'runtime' => $newValues['runtime'],
+                                $voteAvgKey => $newValues[$voteAvgKey],
+                                $voteCountKey => $newValues[$voteCountKey],
+                                $backdropKey => $newValues[$backdropKey],
+                                $trailerKey => $newValues[$trailerKey],
+                                $fontKey => $newValues[$fontKey],
+                            ];
+
+                            if ($key === 'onlipeli') {
+                                $metaUpdates['Released'] = $newValues['Released'];
+                            }
+
+                            // Actualizar cada meta field
+                            foreach ($metaUpdates as $metaKey => $metaValue) {
+                                \DB::connection($connection)->table('postmeta')
+                                    ->updateOrInsert(
+                                        ['post_id' => $post->ID, 'meta_key' => $metaKey],
+                                        ['meta_value' => $metaValue]
+                                    );
+                            }
+
+                            $updatedSites[] = "{$domainLabel} (" . implode(', ', $changedFields) . ")";
                         }
 
-                        Notification::make()
-                            ->success()
-                            ->title('Campos actualizados')
-                            ->body("Se actualizaron {$updated} sitios web correctamente")
-                            ->send();
+                        // Mostrar notificación según los resultados
+                        if (empty($updatedSites) && empty($skippedSites)) {
+                            Notification::make()
+                                ->warning()
+                                ->title('Sin posts encontrados')
+                                ->body('No se encontraron posts en WordPress para actualizar')
+                                ->send();
+                        } elseif (empty($updatedSites)) {
+                            Notification::make()
+                                ->info()
+                                ->title('Sin cambios')
+                                ->body('No se detectaron cambios en ningún sitio')
+                                ->send();
+                        } else {
+                            $body = "Actualizados:\n" . implode("\n", $updatedSites);
+                            if (!empty($skippedSites)) {
+                                $body .= "\n\nSin cambios: " . implode(', ', $skippedSites);
+                            }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Campos actualizados')
+                                ->body($body)
+                                ->send();
+                        }
                     }),
             ])
 

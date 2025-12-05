@@ -8,35 +8,26 @@
     'synopsis',
     'backdrop',
     'font',
-    'additionalImage'
+    'additionalImage',
+    'previewId' => 'preview'
 ])
 
+@php
+    $params = http_build_query([
+        'var1' => $poster ?? '',
+        'var2' => $backdrop ?? '',
+        'var3' => $title ?? '',
+        'var4' => '1.2',
+        'var5' => $trailer ?? '',
+        'var6' => $synopsis ?? '',
+        'var7' => $additionalImage ?? '',
+        'var8' => $font ?? 'inherit'
+    ]);
+    $previewUrl = $baseUrl . '?' . $params;
+@endphp
+
 <div 
-    x-data="{
-        poster: @js($poster),
-        title: @js($title),
-        year: @js($year),
-        trailer: @js($trailer),
-        synopsis: @js($synopsis),
-        backdrop: @js($backdrop),
-        font: @js($font),
-        additionalImage: @js($additionalImage),
-        
-        get previewUrl() {
-            const params = new URLSearchParams({
-                var1: this.poster || '',
-                var2: this.backdrop || '',
-                var3: this.title || '',
-                var4: this.year || '',
-                var5: this.trailer || '',
-                var6: this.synopsis || '',
-                var7: this.additionalImage || '',
-                var8: this.font || 'inherit'
-            });
-            
-            return '{{ $baseUrl }}?' + params.toString();
-        }
-    }"
+    wire:key="{{ $previewId }}-{{ md5($backdrop . $poster . $title . $synopsis . $font . $trailer) }}"
     class="space-y-3"
 >
     <div class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -45,7 +36,7 @@
     
     <div class="relative w-full bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden" style="position: relative;padding-bottom: 56.25%;">
         <iframe 
-            :src="previewUrl" 
+            src="{{ $previewUrl }}" 
             class="absolute top-0 left-0 w-full h-full border-0"
             frameborder="0"
             loading="lazy"
