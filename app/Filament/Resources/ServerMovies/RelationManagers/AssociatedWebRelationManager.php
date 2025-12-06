@@ -825,7 +825,7 @@ class AssociatedWebRelationManager extends RelationManager
                                 // Define meta keys for each site (usar siteType, no key)
                                 $metaKeys = [
                                     'release_date' => 'release_date',
-                                    'runtime' => 'runtime',
+                                    'runtime' => $siteType === 'onlipeli' ? 'Runtime' : 'runtime',
                                     'vote_average' => $siteType === 'onlipeli' ? 'imdbRating' : 'vote_average',
                                     'vote_count' => $siteType === 'onlipeli' ? 'imdbVotes' : 'vote_count',
                                     'backdrop' => $siteType === 'onlipeli' ? 'fondo_player' : 'backdrop_film',
@@ -851,7 +851,9 @@ class AssociatedWebRelationManager extends RelationManager
                                 $formData["{$key}_release_year"] = $wpReleaseYear ?: (isset($movieData['release_date']) ? substr($movieData['release_date'], 0, 4) : '');
 
                                 // Runtime - detectar formato y transformar si es necesario
-                                $wpRuntime = $post->meta->where('meta_key', 'runtime')->first()?->meta_value ?? '';
+                                // OnliPeli usa "Runtime" (mayúscula), ClubPeli usa "runtime" (minúscula)
+                                $runtimeKey = $siteType === 'onlipeli' ? 'Runtime' : 'runtime';
+                                $wpRuntime = $post->meta->where('meta_key', $runtimeKey)->first()?->meta_value ?? '';
                                 $originalRuntime = $wpRuntime;
                                 $runtimeWasTransformed = false;
 
@@ -1154,13 +1156,14 @@ class AssociatedWebRelationManager extends RelationManager
                             $backdropKey = $siteType === 'onlipeli' ? 'fondo_player' : 'backdrop_film';
                             $trailerKey = $siteType === 'onlipeli' ? 'youtube_id' : 'trailers';
                             $fontKey = $siteType === 'onlipeli' ? 'mainmovie' : 'font';
+                            $runTime = $siteType === 'onlipeli' ? 'Runtime' : 'runtime';
 
                             // Preparar nuevos valores del formulario (usar key único)
                             $newValues = [
                                 'synopsis' => $data["{$key}_synopsis"] ?? '',
                                 'overview' => $data["{$key}_synopsis"] ?? '',
                                 'release_date' => $data["{$key}_release_year"] ?? '',
-                                'runtime' => $data["{$key}_runtime"] ?? '',
+                                $runTime => $data["{$key}_runtime"] ?? '',
                                 $voteAvgKey => $data["{$key}_vote_average"] ?? '',
                                 $voteCountKey => $data["{$key}_vote_count"] ?? '',
                                 $backdropKey => $data["{$key}_backdrops"] ?? '',
@@ -1186,7 +1189,7 @@ class AssociatedWebRelationManager extends RelationManager
                             $metaFieldsToCheck = [
                                 'overview' => 'Overview',
                                 'release_date' => 'Año',
-                                'runtime' => 'Duración',
+                                $runTime => 'Duración',
                                 $voteAvgKey => 'Rating',
                                 $voteCountKey => 'Votos',
                                 $backdropKey => 'Backdrop',
@@ -1222,7 +1225,7 @@ class AssociatedWebRelationManager extends RelationManager
                             $metaUpdates = [
                                 'overview' => $newValues['overview'],
                                 'release_date' => $newValues['release_date'],
-                                'runtime' => $newValues['runtime'],
+                                $runTime => $newValues[$runTime],
                                 $voteAvgKey => $newValues[$voteAvgKey],
                                 $voteCountKey => $newValues[$voteCountKey],
                                 $backdropKey => $newValues[$backdropKey],
