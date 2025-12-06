@@ -1408,10 +1408,12 @@ class AssociatedWebRelationManager extends RelationManager
                                 ]);
                             }
 
-                            // Obtener el primer MovieLink asociado
-                            $firstDetail = $record->movieLinkDetails->first();
+                            // Obtener el primer MovieLink del ServerMovie ordenado por sort
+                            $serverMovie = $this->getOwnerRecord();
+                            $allMovieLinks = $serverMovie->movieLinks()->orderBy('sort', 'asc')->get();
+                            $firstMovieLink = $allMovieLinks->first();
 
-                            if (!$firstDetail || !$firstDetail->movieLink || !$firstDetail->movieLink->movie_link) {
+                            if (!$firstMovieLink || !$firstMovieLink->movie_link) {
                                 \Log::warning('No MovieLink found', [
                                     'record_id' => $record->id,
                                 ]);
@@ -1423,7 +1425,7 @@ class AssociatedWebRelationManager extends RelationManager
                                 return;
                             }
 
-                            $urlToSend = $firstDetail->movieLink->movie_link;
+                            $urlToSend = $firstMovieLink->movie_link;
                             \Log::info('Attempting to send URL', [
                                 'url' => $urlToSend,
                                 'post_id' => $post->ID,
@@ -1435,6 +1437,27 @@ class AssociatedWebRelationManager extends RelationManager
 
                             if ($result) {
                                 \Log::info('Successfully sent to WordPress');
+
+                                // Sincronizar movieLinkDetails con todos los MovieLinks y su sort
+                                foreach ($allMovieLinks as $movieLink) {
+                                    $existingDetail = $record->movieLinkDetails()
+                                        ->where('movie_link_id', $movieLink->id)
+                                        ->first();
+
+                                    if (!$existingDetail) {
+                                        $record->movieLinkDetails()->create([
+                                            'movie_link_id' => $movieLink->id,
+                                            'was_updated' => true,
+                                            'sort' => $movieLink->sort ?? 0,
+                                        ]);
+                                    } else {
+                                        $existingDetail->update([
+                                            'was_updated' => true,
+                                            'sort' => $movieLink->sort ?? 0,
+                                        ]);
+                                    }
+                                }
+
                                 Notification::make()
                                     ->success()
                                     ->title('Enviado')
