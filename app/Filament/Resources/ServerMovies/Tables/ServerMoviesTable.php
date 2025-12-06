@@ -137,11 +137,14 @@ class ServerMoviesTable
                                             continue;
                                         }
 
-                                        // Crear AssociatedWeb
+                                        // Crear AssociatedWeb con wp_edit_url
+                                        $wpEditUrl = "https://{$domain}/wp-admin/post.php?post={$post->ID}&action=edit";
                                         $associatedWeb = $serverMovie->associatedWebs()->create([
                                             'link' => $post->getFullUrl($domain),
                                             'get_domain' => $domain,
                                             'badge_color' => $config['color'],
+                                            'wp_edit_url' => $wpEditUrl,
+                                            'wp_edit_completed' => false,
                                         ]);
 
                                         // Asociar todos los MovieLinks
