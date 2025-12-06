@@ -12,10 +12,11 @@ class Note extends Model
         'name',
         'description',
         'tag',
+        'sort',
     ];
 
     protected function casts(): array
-    { 
+    {
         return [
             'tag' => 'array',
         ];

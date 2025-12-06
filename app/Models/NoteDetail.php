@@ -13,10 +13,11 @@ class NoteDetail extends Model
         'content',
         'color',
         'screenshot',
+        'sort',
     ];
 
     protected function casts(): array
-    { 
+    {
         return [
             'description' => 'array',
             'screenshot' => 'array',

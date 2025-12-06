@@ -20,7 +20,8 @@ class NotesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->defaultSort('created_at', 'desc') # Ordenar por fecha de creación
+            ->reorderable('sort')
+            #->defaultSort('created_at', 'desc') # Ordenar por fecha de creación
             ->defaultPaginationPageOption(25) # Por defecto mostrar 25 registros
             ->columns([
                 TextColumn::make('name')

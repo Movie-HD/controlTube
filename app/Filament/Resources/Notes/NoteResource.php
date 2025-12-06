@@ -41,6 +41,11 @@ class NoteResource extends Resource
         return NotesTable::configure($table);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->orderBy('sort');
+    }
+
     public static function getRelations(): array
     {
         return [

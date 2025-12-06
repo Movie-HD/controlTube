@@ -92,7 +92,7 @@ class NoteForm
                                         }
                                     </style>
                                 HTML)),
-                        
+
                         Section::make('Contenido')
                             ->collapsible()
                             ->collapsed()
@@ -115,7 +115,7 @@ class NoteForm
                                             ->native(false)
                                             ->columnSpan(['default' => 5, 'sm' => 4, 'md' => 3]),
                                     ])
-                                    ->columns(['default' => 14, 'sm' => 14, 'md' => 14]),
+                                        ->columns(['default' => 14, 'sm' => 14, 'md' => 14]),
                                     RichEditor::make('description')
                                         ->json()
                                         ->placeholder('Descripción'),
@@ -133,6 +133,7 @@ class NoteForm
                     ->columnSpan('full')
                     ->hiddenLabel()
                     ->collapsible()
+                    ->orderColumn('sort')
                     ->addActionLabel('Nuevo Detalle')
                     ->reorderable()
 
