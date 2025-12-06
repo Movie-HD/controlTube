@@ -114,7 +114,7 @@ class ServerMovieForm
                                             $set('host_server_id', null);
                                         }
                                     })
-                                    ->visible(fn (Get $get) => !is_null($get('host_server_id'))),
+                                    ->visible(fn(Get $get) => !is_null($get('host_server_id'))),
                             ])
 
                             # ✅ Usamos editOptionForm para editar el host server seleccionado. [Este metodo es de Filament]
@@ -159,7 +159,8 @@ class ServerMovieForm
                             ->preload(),
                     ])
                     ->addActionLabel('Nuevo Host')
-                    ->reorderable(false)
+                    ->orderColumn('sort')
+                    ->reorderable()
                     ->columnSpanFull(),
             ]);
     }

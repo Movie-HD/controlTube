@@ -10,6 +10,7 @@ class MovieLink extends Model
         'server_movie_id',
         'host_server_id',
         'movie_link',
+        'sort',
     ];
 
     public function serverMovie()
@@ -30,8 +31,8 @@ class MovieLink extends Model
     public function associatedWebs()
     {
         return $this->belongsToMany(AssociatedWeb::class)
-                    ->withPivot('was_updated')
-                    ->withTimestamps();
+            ->withPivot('was_updated')
+            ->withTimestamps();
     }
 
 }

@@ -104,7 +104,8 @@ class AssociatedWebRelationManager extends RelationManager
                             ->default(true),
                     ])
                     ->addActionLabel('Nuevo enlace')
-                    ->reorderable(false)
+                    ->orderColumn('sort')
+                    ->reorderable()
                     ->columnSpanFull()
             ]);
     }
@@ -185,7 +186,8 @@ class AssociatedWebRelationManager extends RelationManager
                             return;
                         }
 
-                        // Obtener el primer MovieLink (automático)
+                        // Obtener el primer MovieLink ordenado por sort
+                        $movieLinks = $serverMovie->movieLinks()->orderBy('sort', 'asc')->get();
                         $firstMovieLink = $movieLinks->first();
                         $urlToSend = $firstMovieLink->movie_link;
 
@@ -243,6 +245,26 @@ class AssociatedWebRelationManager extends RelationManager
                                     // Intentar actualizar el link en WordPress de todas formas
                                     if ($service->updateUrlFilm($post, $urlToSend, $domain)) {
                                         $updated++;
+
+                                        // Sincronizar movieLinkDetails con todos los MovieLinks y su sort
+                                        foreach ($movieLinks as $movieLink) {
+                                            $existingDetail = $existingWeb->movieLinkDetails()
+                                                ->where('movie_link_id', $movieLink->id)
+                                                ->first();
+
+                                            if (!$existingDetail) {
+                                                $existingWeb->movieLinkDetails()->create([
+                                                    'movie_link_id' => $movieLink->id,
+                                                    'was_updated' => true,
+                                                    'sort' => $movieLink->sort ?? 0,
+                                                ]);
+                                            } else {
+                                                $existingDetail->update([
+                                                    'was_updated' => true,
+                                                    'sort' => $movieLink->sort ?? 0,
+                                                ]);
+                                            }
+                                        }
                                     }
 
                                     $alreadyExists++;
@@ -258,11 +280,12 @@ class AssociatedWebRelationManager extends RelationManager
                                     'wp_edit_completed' => false,
                                 ]);
 
-                                // Asociar todos los MovieLinks
+                                // Asociar todos los MovieLinks con su sort
                                 foreach ($movieLinks as $movieLink) {
                                     $associatedWeb->movieLinkDetails()->create([
                                         'movie_link_id' => $movieLink->id,
                                         'was_updated' => true,
+                                        'sort' => $movieLink->sort ?? 0,
                                     ]);
                                 }
 
@@ -755,17 +778,70 @@ class AssociatedWebRelationManager extends RelationManager
                                     ]);
                                 }
 
-                                // Obtener el primer MovieLink asociado
-                                $firstDetail = $associatedWeb->movieLinkDetails->first();
+                                // Obtener el primer MovieLink del ServerMovie (ordenado por sort)
+                                $allMovieLinks = $serverMovie->movieLinks()
+                                    ->orderBy('sort', 'asc')
+                                    ->get();
 
-                                if ($firstDetail && $firstDetail->movieLink && $firstDetail->movieLink->movie_link) {
-                                    $urlToSend = $firstDetail->movieLink->movie_link;
+                                \Log::info("All MovieLinks for ServerMovie {$serverMovie->id}", [
+                                    'total' => $allMovieLinks->count(),
+                                    'movieLinks' => $allMovieLinks->map(fn($ml) => [
+                                        'id' => $ml->id,
+                                        'sort' => $ml->sort,
+                                        'movie_link' => $ml->movie_link,
+                                    ])->toArray()
+                                ]);
+
+                                $firstMovieLink = $allMovieLinks->first();
+
+                                if ($firstMovieLink) {
+                                    \Log::info("First MovieLink selected", [
+                                        'id' => $firstMovieLink->id,
+                                        'sort' => $firstMovieLink->sort,
+                                        'movie_link' => $firstMovieLink->movie_link,
+                                    ]);
+                                }
+
+                                if ($firstMovieLink && $firstMovieLink->movie_link) {
+                                    $urlToSend = $firstMovieLink->movie_link;
+
+                                    \Log::info("Sending to WordPress", [
+                                        'url_to_send' => $urlToSend,
+                                        'domain' => $domain,
+                                    ]);
 
                                     // Enviar a WordPress
                                     if ($service->updateUrlFilm($post, $urlToSend, $domain)) {
                                         $updated++;
+
+                                        // Sincronizar movieLinkDetails - asociar todos los MovieLinks del ServerMovie con su sort
+                                        foreach ($allMovieLinks as $movieLink) {
+                                            // Verificar si ya existe la relación
+                                            $existingDetail = $associatedWeb->movieLinkDetails()
+                                                ->where('movie_link_id', $movieLink->id)
+                                                ->first();
+
+                                            if (!$existingDetail) {
+                                                $associatedWeb->movieLinkDetails()->create([
+                                                    'movie_link_id' => $movieLink->id,
+                                                    'was_updated' => true,
+                                                    'sort' => $movieLink->sort ?? 0,
+                                                ]);
+                                            } else {
+                                                // Actualizar como enviado y sync el sort
+                                                $existingDetail->update([
+                                                    'was_updated' => true,
+                                                    'sort' => $movieLink->sort ?? 0,
+                                                ]);
+                                            }
+                                        }
+
+                                        \Log::info("Synced movieLinkDetails for AssociatedWeb {$associatedWeb->id}", [
+                                            'total_links' => $allMovieLinks->count()
+                                        ]);
                                     }
                                 } else {
+                                    \Log::warning("No MovieLink found for ServerMovie {$serverMovie->id}");
                                     $notFound++;
                                 }
                             } else {

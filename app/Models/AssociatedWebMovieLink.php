@@ -10,6 +10,7 @@ class AssociatedWebMovieLink extends Model
         'associated_web_id',
         'movie_link_id',
         'was_updated',
+        'sort',
     ];
 
     protected $table = 'associated_web_movie_link';
