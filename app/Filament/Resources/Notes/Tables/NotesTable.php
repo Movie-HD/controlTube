@@ -28,7 +28,10 @@ class NotesTable
                     ->searchable(),
                 TextColumn::make('description')
                     ->html()
-                    ->searchable(),
+                    ->searchable()
+                    ->extraAttributes([
+                        'style' => 'max-height: 4rem;'
+                    ]),
                 TextColumn::make('tag')
                     ->searchable(),
                 TextColumn::make('created_at')

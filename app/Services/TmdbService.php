@@ -100,4 +100,27 @@ class TmdbService
             ],
         ];
     }
+
+    /**
+     * Busca películas por nombre
+     */
+    public function searchMovie(string $query): array
+    {
+        try {
+            $response = Http::get("{$this->baseUrl}/search/movie", [
+                'api_key' => $this->apiKey,
+                'query' => $query,
+                'language' => 'es-ES',
+            ]);
+
+            if ($response->successful()) {
+                return $response->json()['results'] ?? [];
+            }
+
+            return [];
+        } catch (\Exception $e) {
+            \Log::error("TMDB Search error: " . $e->getMessage());
+            return [];
+        }
+    }
 }

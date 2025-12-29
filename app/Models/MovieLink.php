@@ -11,6 +11,9 @@ class MovieLink extends Model
         'host_server_id',
         'movie_link',
         'sort',
+        'calidad',
+        'idioma',
+        'referencia',
     ];
 
     public function serverMovie()
